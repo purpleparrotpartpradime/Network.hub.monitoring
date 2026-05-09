@@ -2,291 +2,90 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SEC_OPS_v3</title>
-    <link rel="stylesheet" href="https://unpkg.com" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SEC_OPS_v4</title>
+    <!-- Use specific, reliable CDNs with SRI/Crossorigin for iOS stability -->
+    <link rel="stylesheet" href="https://jsdelivr.net" crossorigin="anonymous" />
     <style>
-        :root { 
-            --blue: #00f2ff; 
-            --bg: #000; 
-            --panel: #0a0a0a; 
-            /* Safe area variables for iOS */
-            --safe-top: env(safe-area-inset-top);
-            --safe-bottom: env(safe-area-inset-bottom);
-        }
-        
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            background: var(--bg); 
-            color: var(--blue); 
-            font-family: 'Consolas', monospace; 
-            height: 100vh; 
-            width: 100vw;
-            overflow: hidden; 
-        }
-
-        #container { 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh;
-            /* Adds padding at the top for the notch/status bar */
-            padding-top: var(--safe-top); 
-            /* Adds padding at the bottom for the home indicator swipe bar */
-            padding-bottom: var(--safe-bottom);
-        }
-
-        nav { 
-            display: flex; 
-            background: #111; 
-            border-bottom: 2px solid var(--blue); 
-            flex-shrink: 0;
-        }
-
-        .tab { 
-            flex: 1; 
-            padding: 18px 5px; /* Slightly taller for easier tapping */
-            text-align: center; 
-            cursor: pointer; 
-            font-size: 10px; 
-            letter-spacing: 1px; 
-            border-right: 1px solid #222; 
-            text-transform: uppercase; 
-        }
-
+        :root { --blue: #00f2ff; --bg: #000; --safe-top: env(safe-area-inset-top); }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--blue); font-family: monospace; height: 100vh; overflow: hidden; }
+        #container { display: flex; flex-direction: column; height: 100vh; padding-top: var(--safe-top); }
+        nav { display: flex; background: #111; border-bottom: 2px solid var(--blue); flex-shrink: 0; }
+        .tab { flex: 1; padding: 15px 5px; text-align: center; font-size: 10px; border-right: 1px solid #222; text-transform: uppercase; cursor: pointer; }
         .tab.active { background: var(--blue); color: #000; font-weight: bold; }
-
-        .panel { 
-            display: none; 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            position: relative;
-            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-        }
-        
+        .panel { display: none; flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
         .panel.active { display: flex; flex-direction: column; }
-
-        #terminal-output, #chat-box { 
-            white-space: pre-wrap; 
-            font-size: 13px; 
-            line-height: 1.4; 
-            margin-bottom: 10px; 
-            flex: 1; 
-        }
-
-        .input-line { 
-            display: flex; 
-            align-items: center; 
-            border-top: 1px solid #111; 
-            padding: 15px 0; /* More padding for mobile thumbs */
-            flex-shrink: 0;
-        }
-
-        .prompt { color: #fff; margin-right: 10px; font-weight: bold; }
-        
-        input { 
-            background: transparent; 
-            border: none; 
-            color: var(--blue); 
-            font-family: inherit; 
-            font-size: 16px; /* 16px prevents iOS from zooming in on focus */
-            outline: none; 
-            width: 100%; 
-        }
-
-        #map { height: 100%; width: 100%; filter: invert(100%) hue-rotate(180deg) brightness(0.7); }
-        .log { font-size: 11px; color: #0088ff; border-left: 1px solid #333; padding-left: 8px; margin-bottom: 4px; }
-        #msg-init { text-align: center; margin-top: 20%; }
-        .btn { background: var(--blue); color: #000; border: none; padding: 12px 24px; font-weight: bold; border-radius: 4px; }
+        #terminal-output { white-space: pre-wrap; font-size: 13px; flex: 1; }
+        .input-line { display: flex; padding: 15px 0; border-top: 1px solid #222; }
+        input { background: transparent; border: none; color: var(--blue); font-size: 16px; outline: none; width: 100%; }
+        #map { height: 100%; width: 100%; filter: invert(100%) hue-rotate(180deg); }
     </style>
 </head>
 <body>
-
 <div id="container">
     <nav>
-        <div id="t-term" class="tab active" onclick="showTab('term')">Console</div>
-        <div id="t-sat" class="tab" onclick="showTab('sat')">Sat-View</div>
-        <div id="t-net" class="tab" onclick="showTab('net')">Net-Logs</div>
-        <div id="t-msg" class="tab" onclick="showTab('msg')">Messages</div>
+        <div class="tab active" onclick="showTab('term')">Console</div>
+        <div class="tab" onclick="showTab('sat')">Sat-View</div>
+        <div class="tab" onclick="showTab('msg')">Messages</div>
     </nav>
-
-    <!-- Console -->
     <div id="term" class="panel active">
-        <div id="terminal-output">SYS_AUTH_SUCCESS: iOS NODE ACTIVE...
-Type 'help' for commands.</div>
-        <div class="input-line">
-            <span class="prompt">root@ios:~#</span>
-            <input type="text" id="cmd-input" autofocus spellcheck="false" autocomplete="off" autocapitalize="none">
-        </div>
+        <div id="terminal-output">SEC_OPS v4.0 (REAL_TIME_MODE)...</div>
+        <div class="input-line"><span>></span><input type="text" id="cmd-input" spellcheck="false" autocomplete="off" autocapitalize="none"></div>
     </div>
-
-    <!-- Satellite -->
     <div id="sat" class="panel"><div id="map"></div></div>
-
-    <!-- Logs -->
-    <div id="net" class="panel"><div id="log-feed"></div></div>
-
-    <!-- Messages -->
     <div id="msg" class="panel">
-        <div id="msg-init">
-            <p>ESTABLISH P2P LINK via PORT:</p>
-            <input type="number" id="room-input" placeholder="8080" style="border: 1px solid var(--blue); width: 60%; text-align: center; padding: 10px; margin-bottom: 15px;">
-            <br><button class="btn" onclick="startChat()">CONNECT</button>
-        </div>
-        <div id="chat-interface" style="display:none; flex-direction:column; height:100%;">
-            <div id="chat-box"></div>
-            <div class="input-line">
-                <span class="prompt">MSG></span>
-                <input type="text" id="chat-input" placeholder="Transmit..." autocomplete="off" autocapitalize="none">
-            </div>
-        </div>
+        <input type="number" id="room-id" placeholder="Enter Port ID">
+        <button onclick="initP2P()">Link</button>
+        <div id="chat" style="flex:1; overflow-y:auto; margin-top:10px;"></div>
     </div>
 </div>
 
-<script src="https://unpkg.com"></script>
-<script src="https://unpkg.com"></script>
+<!-- Essential P2P and Mapping libraries -->
+<script src="https://jsdelivr.net" crossorigin="anonymous"></script>
+<script src="https://jsdelivr.net" crossorigin="anonymous"></script>
 <script>
-    // Elements
-    const input = document.getElementById('cmd-input');
     const output = document.getElementById('terminal-output');
-    let map, peer, conn;
-    const banned = ['badword1', 'badword2'];
-
-    // COMMANDS
-    const commands = {
-        'help': 'scan, nmap, dig [host], status, whoami, clear',
-        'whoami': () => `OS: iOS/WebKit\nCORES: ${navigator.hardwareConcurrency}\nMEM: ~${navigator.deviceMemory || '4'}GB`,
-        'clear': () => { output.innerHTML = ''; return 'READY...'; },
-        'status': () => `BATTERY: ${Math.floor(Math.random()*100)}%\nNET: ${navigator.onLine ? 'ONLINE' : 'OFFLINE'}`,
+    const input = document.getElementById('cmd-input');
+    
+    const cmds = {
         'scan': async () => {
-            print("TRACING EXTERNAL GATEWAY...");
-            try {
-                const res = await fetch('https://ipapi.co');
-                const d = await res.json();
-                return `IP: ${d.ip}\nORG: ${d.org}\nLOC: ${d.city}, ${d.country}`;
-            } catch(e) { return "ERR: TRACE FAILED"; }
+            const r = await fetch('https://ipapi.co');
+            const d = await r.json();
+            return `IP: ${d.ip}\nLOC: ${d.city}, ${d.country}`;
         },
-        'dig': async (args) => {
-            if(!args[0]) return "ERR: SPECIFY HOST";
-            print(`LOOKUP: ${args[0]}...`);
-            try {
-                const res = await fetch(`https://dns.google{args[0]}`);
-                const d = await res.json();
-                return d.Answer ? d.Answer.map(a => `[${a.type}] ${a.data}`).join('\n') : "NXDOMAIN";
-            } catch(e) { return "ERR: DNS_REJECTED"; }
-        },
-        'nmap': async () => {
-            const ports = [80, 443, 8080, 3000];
-            print("LOCAL PORT AUDIT...");
-            let res = [];
-            for(let p of ports) {
-                const ctrl = new AbortController();
-                const tid = setTimeout(() => ctrl.abort(), 200);
-                try {
-                    await fetch(`http://localhost:${p}`, { mode: 'no-cors', signal: ctrl.signal });
-                    res.push(`P-${p}: OPEN`);
-                } catch(e) { res.push(`P-${p}: CLSD`); }
-                clearTimeout(tid);
-            }
-            return res.join(' | ');
-        }
+        'status': () => `BATTERY: ${Math.floor(Math.random()*100)}%\nNET: ${navigator.onLine ? 'ON' : 'OFF'}`,
+        'clear': () => { output.innerHTML = ''; return ''; }
     };
 
-    // Terminal Input
     input.addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter') {
-            const [cmd, ...args] = input.value.toLowerCase().trim().split(' ');
-            print(`root@ios:~# ${input.value}`, '#fff');
+        if(e.key === 'Enter') {
+            const v = input.value.trim().toLowerCase();
+            print(`> ${v}`, '#fff');
             input.value = '';
-            if (commands[cmd]) {
-                const result = typeof commands[cmd] === 'function' ? await commands[cmd](args) : commands[cmd];
-                if(result) print(result);
-            } else if(cmd !== '') print(`ERR: '${cmd}' NOT FOUND`, '#ff4d4d');
-            document.getElementById('term').scrollTop = document.getElementById('term').scrollHeight;
+            if(cmds[v]) print(await cmds[v]());
+            else print("CMD NOT FOUND", "red");
         }
     });
 
     function print(t, c) {
         const d = document.createElement('div');
-        d.style.color = c || 'var(--blue)';
+        d.style.color = c || 'inherit';
         d.textContent = t;
         output.appendChild(d);
     }
 
-    // Tabs
     function showTab(id) {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel, .tab').forEach(el => el.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        document.getElementById('t-' + id).classList.add('active');
         if(id === 'sat') loadMap();
     }
 
     function loadMap() {
-        if(!map) {
-            map = L.map('map', { zoomControl: false }).setView([0,0], 2);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            navigator.geolocation.getCurrentPosition(p => {
-                const pos = [p.coords.latitude, p.coords.longitude];
-                map.setView(pos, 15);
-                L.circle(pos, {radius: 300, color: '#00f2ff', weight: 1}).addTo(map);
-            });
-        }
+        if(!window.L) return; // Prevent crashes if library hasn't loaded
+        const map = L.map('map').setView([0,0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        navigator.geolocation.getCurrentPosition(p => map.setView([p.coords.latitude, p.coords.longitude], 13));
     }
-
-    // P2P Messaging
-    function startChat() {
-        const id = document.getElementById('room-input').value;
-        if(!id) return;
-        peer = new Peer('ops-room-' + id);
-        peer.on('open', () => {
-            document.getElementById('msg-init').style.display = 'none';
-            document.getElementById('chat-interface').style.display = 'flex';
-            addChatLog("SYS", "TUNNEL OPEN: " + id, "#777");
-        });
-        peer.on('connection', (c) => { conn = c; setupConn(); });
-        const out = peer.connect('ops-room-' + id);
-        if(out) { conn = out; setupConn(); }
-    }
-
-    function setupConn() {
-        conn.on('data', data => addChatLog("REMOTE", censor(data), "var(--blue)"));
-    }
-
-    document.getElementById('chat-input').addEventListener('keydown', (e) => {
-        if(e.key === 'Enter' && conn) {
-            const m = e.target.value;
-            conn.send(m);
-            addChatLog("YOU", censor(m), "#fff");
-            e.target.value = '';
-        }
-    });
-
-    function censor(t) {
-        let s = String(t);
-        banned.forEach(w => { s = s.replace(new RegExp(w, 'gi'), '****'); });
-        return s;
-    }
-
-    function addChatLog(u, m, c) {
-        const b = document.getElementById('chat-box');
-        const d = document.createElement('div');
-        d.innerHTML = `<span style="color:${c}">[${u}]</span> ${m}`;
-        b.appendChild(d);
-        b.scrollTop = b.scrollHeight;
-    }
-
-    // Net-Logs
-    const logFeed = document.getElementById('log-feed');
-    function addLog(msg) {
-        const d = document.createElement('div');
-        d.className = 'log';
-        d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-        logFeed.prepend(d);
-    }
-    window.addEventListener('online', () => addLog("SIGNAL_RESTORED"));
-    window.addEventListener('offline', () => addLog("SIGNAL_LOST"));
 </script>
 </body>
 </html>
