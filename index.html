@@ -3,116 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Phobos</title>
+    <title>SECURE_LINK</title>
     <style>
-        :root { 
-            --cyan: #00f2ff; 
-            --navy: #000a1a; 
-            --dark-blue: #001a33; 
-            --bg: #00050a;
-            --safe-top: env(safe-area-inset-top);
-        }
-        
-        body, html { 
-            margin: 0; padding: 0; 
-            background: var(--bg); 
-            color: var(--cyan); 
-            font-family: 'Courier New', monospace; 
-            height: 100%; width: 100vw;
-            overflow: hidden; 
-            position: fixed;
-        }
-        
-        #main { 
-            display: flex; 
-            flex-direction: column; 
-            height: 100%;
-            padding-top: var(--safe-top);
-        }
-
-        #header { 
-            background: var(--navy); 
-            border-bottom: 2px solid var(--dark-blue); 
-            padding: 15px; 
-            text-align: center; 
-            font-size: 12px; 
-            flex-shrink: 0;
-        }
-
-        #setup { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 20px;
-        }
-
-        #chat-ui { 
-            display: none; 
-            flex: 1; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
-
-        #box { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            -webkit-overflow-scrolling: touch; 
-        }
-        
-        .line { 
-            display: flex; 
-            padding: 15px; 
-            background: var(--navy); 
-            border-top: 1px solid var(--dark-blue); 
-            flex-shrink: 0;
-            padding-bottom: calc(15px + env(safe-area-inset-bottom));
-        }
-
-        input { 
-            background: transparent; 
-            border: none; 
-            color: var(--cyan); 
-            font-size: 16px; 
-            outline: none; 
-            width: 100%; 
-            font-family: inherit; 
-        }
-
-        #port-in { 
-            border-bottom: 1px solid var(--cyan); 
-            text-align: center; 
-            margin-bottom: 30px; 
-            width: 80%; 
-            padding: 10px;
-        }
-        
-        .btn-row {
-            display: flex;
-            gap: 10px;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        button { 
-            flex: 1;
-            background: var(--cyan); 
-            color: #000; 
-            border: none; 
-            padding: 20px 0; 
-            font-weight: bold; 
-            border-radius: 4px;
-            text-transform: uppercase;
-        }
-
-        .btn-alt {
-            background: var(--dark-blue);
-            color: var(--cyan);
-            border: 1px solid var(--cyan);
-        }
-
+        :root { --cyan: #00f2ff; --navy: #000a1a; --dark-blue: #001a33; --bg: #00050a; --safe-top: env(safe-area-inset-top); }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--cyan); font-family: 'Courier New', monospace; height: 100%; width: 100vw; overflow: hidden; position: fixed; }
+        #main { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-top); }
+        #header { background: var(--navy); border-bottom: 2px solid var(--dark-blue); padding: 15px; text-align: center; font-size: 12px; flex-shrink: 0; }
+        #setup { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        #chat-ui { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        #box { flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
+        .line { display: flex; padding: 15px; background: var(--navy); border-top: 1px solid var(--dark-blue); flex-shrink: 0; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
+        input { background: transparent; border: none; color: var(--cyan); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
+        #port-in { border-bottom: 1px solid var(--cyan); text-align: center; margin-bottom: 30px; width: 80%; padding: 10px; }
+        .btn-row { display: flex; gap: 10px; width: 90%; max-width: 400px; }
+        button { flex: 1; background: var(--cyan); color: #000; border: none; padding: 20px 0; font-weight: bold; border-radius: 4px; text-transform: uppercase; }
+        .btn-alt { background: var(--dark-blue); color: var(--cyan); border: 1px solid var(--cyan); }
         .msg-wrap { margin-bottom: 15px; border-left: 2px solid var(--dark-blue); padding-left: 12px; }
         .sender-id { font-size: 10px; color: #555; display: block; margin-bottom: 4px; }
         .msg-text { font-size: 14px; line-height: 1.5; color: #fff; }
@@ -121,10 +26,8 @@
     </style>
 </head>
 <body>
-
 <div id="main">
     <div id="header">ID_STATUS: <span id="my-id-display">PENDING</span></div>
-
     <div id="setup">
         <input type="number" id="port-in" placeholder="ID">
         <div class="btn-row">
@@ -132,11 +35,10 @@
             <button onclick="initialize(true)" class="btn-alt">LINK</button>
         </div>
     </div>
-
     <div id="chat-ui">
         <div id="box"></div>
         <div class="line">
-            <input type="text" id="msg-in" placeholder="TYPE TRANSMISSION..." autocomplete="off" autocapitalize="none">
+            <input type="text" id="msg-in" placeholder="TYPE..." autocomplete="off" autocapitalize="none">
         </div>
     </div>
 </div>
@@ -158,53 +60,37 @@
     function initialize(isLinkOnly) {
         myPort = document.getElementById('port-in').value;
         if (!myPort) return;
-
         const nodeId = isLinkOnly ? 'node-guest-' + Math.floor(Math.random()*99999) : 'node-' + myPort;
         
-        // PeerJS initialization
-        peer = new Peer(nodeId);
+        // Added Google STUN servers to bypass NAT/Firewalls
+        peer = new Peer(nodeId, {
+            config: {'iceServers': [
+                { url: 'stun:stun.l.google.com:19302' },
+                { url: 'stun:stun1.l.google.com:19302' }
+            ]},
+            debug: 3
+        });
 
         peer.on('open', () => {
             document.getElementById('my-id-display').textContent = isLinkOnly ? "GUEST" : myPort;
             document.getElementById('setup').style.display = 'none';
             document.getElementById('chat-ui').style.display = 'flex';
-            
             if (isLinkOnly) {
-                // FIXED: Setting serialization to JSON for Safari stability
-                const request = peer.connect('node-' + myPort, { 
-                    serialization: 'json',
-                    reliable: true 
-                });
-                if (request) { 
-                    conn = request; 
-                    setupLink(); 
-                }
-            } else {
-                addLog("CHANNEL_HOSTED: " + myPort);
+                const request = peer.connect('node-' + myPort, { serialization: 'json' });
+                if (request) { conn = request; setupLink(); }
             }
         });
 
-        peer.on('connection', (c) => {
-            conn = c;
-            setupLink();
-        });
-
-        peer.on('error', (err) => {
-            if (err.type === 'id-taken') alert("ID_IN_USE");
-            else if (err.type === 'peer-not-found') alert("ID_NOT_ONLINE");
-            else console.error(err);
+        peer.on('connection', (c) => { conn = c; setupLink(); });
+        peer.on('error', (err) => { 
+            console.log(err.type); 
+            if(err.type === 'id-taken') { alert("ID TAKEN"); location.reload(); }
         });
     }
 
     function setupLink() {
-        // Apply listeners once link is confirmed
-        conn.on('open', () => {
-            addLog("LINK_ESTABLISHED");
-        });
-        
-        conn.on('data', data => {
-            addMsg("REMOTE", data, false);
-        });
+        conn.on('data', data => addMsg("REMOTE", data, false));
+        conn.on('open', () => addLog("LINK_ESTABLISHED"));
     }
 
     function addMsg(id, text, isSelf) {
@@ -224,11 +110,9 @@
     }
 
     document.getElementById('msg-in').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && conn && conn.open) {
-            const m = e.target.value;
-            if (!m) return;
-            conn.send(m);
-            addMsg("YOU", m, true);
+        if (e.key === 'Enter' && conn) {
+            conn.send(e.target.value);
+            addMsg("YOU", e.target.value, true);
             e.target.value = '';
         }
     });
