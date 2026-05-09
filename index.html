@@ -5,42 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="stylesheet" href="https://unpkg.com" />
     <style>
-        :root { --c: #00f2ff; --bg: #000; }
-        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--c); font-family: monospace; height: 100vh; overflow: hidden; }
+        :root { --cyan: #00f2ff; --navy: #001122; --dark-blue: #002244; --bg: #00050a; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--cyan); font-family: 'Courier New', monospace; height: 100vh; overflow: hidden; }
         #main { display: flex; flex-direction: column; height: 100vh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
-        nav { display: flex; background: #001a33; border-bottom: 1px solid var(--c); flex-shrink: 0; }
-        .t { flex: 1; padding: 20px 0; text-align: center; font-size: 12px; cursor: pointer; border-right: 1px solid #222; }
-        .t.active { background: var(--c); color: #000; font-weight: bold; }
-        .p { display: none; flex: 1; overflow: auto; padding: 15px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
+        
+        nav { display: flex; background: var(--navy); border-bottom: 2px solid var(--dark-blue); flex-shrink: 0; }
+        .t { flex: 1; padding: 22px 0; text-align: center; font-size: 13px; cursor: pointer; border-right: 1px solid var(--dark-blue); letter-spacing: 1px; }
+        .t.active { background: var(--dark-blue); color: #fff; text-shadow: 0 0 8px var(--cyan); }
+
+        .p { display: none; flex: 1; overflow: auto; padding: 15px; padding-bottom: 120px; -webkit-overflow-scrolling: touch; }
         .p.active { display: flex; flex-direction: column; }
-        #out, #box { white-space: pre-wrap; font-size: 14px; flex: 1; }
-        /* Keyboard Fix: Increased padding and height */
-        .line { display: flex; padding: 20px 10px; border-top: 1px solid #222; background: #000; position: sticky; bottom: 0; flex-shrink: 0; z-index: 100; }
-        input { background: transparent; border: none; color: var(--c); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
-        #map { height: 100%; width: 100%; filter: invert(1) hue-rotate(180deg); background: #000; }
-        button { background: var(--c); color: #000; border: none; padding: 15px; font-weight: bold; width: 100%; margin-top: 10px; border-radius: 5px; }
+
+        #out, #box { white-space: pre-wrap; font-size: 14px; flex: 1; line-height: 1.5; }
+        
+        /* Sticky Input Bar - Won't hide under keyboard */
+        .line { display: flex; padding: 15px; border: 1px solid var(--dark-blue); background: var(--navy); position: sticky; bottom: 10px; flex-shrink: 0; z-index: 100; border-radius: 4px; }
+        input { background: transparent; border: none; color: var(--cyan); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
+        
+        #map { height: 100%; width: 100%; filter: invert(1) hue-rotate(180deg) brightness(0.6) contrast(1.2); background: #000; }
+        button { background: var(--cyan); color: #000; border: none; padding: 18px; font-weight: bold; width: 100%; margin-top: 15px; border-radius: 2px; text-transform: uppercase; }
+        
+        #set { margin-top: 30%; text-align: center; }
+        .sys-msg { color: #555; font-style: italic; font-size: 12px; margin: 5px 0; }
     </style>
 </head>
 <body>
+
 <div id="main">
     <nav>
-        <div class="t active" onclick="tab('term')">TERM</div>
+        <div class="t active" onclick="tab('term')">CONSOLE</div>
         <div class="t" onclick="tab('sat')">MAP</div>
-        <div class="t" onclick="tab('msg')">MSG</div>
+        <div class="t" onclick="tab('msg')">MESSAGES</div>
     </nav>
+
     <div id="term" class="p active">
         <div id="out">READY.</div>
         <div class="line"><span>> </span><input type="text" id="in" spellcheck="false" autocomplete="off" autocapitalize="none"></div>
     </div>
+
     <div id="sat" class="p"><div id="map"></div></div>
+
     <div id="msg" class="p">
         <div id="set">
-            <input type="number" id="port" placeholder="ENTER PORT (e.g. 5555)" style="border: 1px solid var(--c); text-align: center; padding: 10px; width: 90%;">
-            <button onclick="conn()">CONNECT</button>
+            <p style="font-size: 11px; color: var(--dark-blue);">ASSIGN SHARED PORT ID</p>
+            <input type="number" id="port" placeholder="0000" style="border-bottom: 1px solid var(--cyan); text-align: center; padding: 10px; width: 80%;">
+            <button onclick="conn()">SECURE LINK</button>
         </div>
         <div id="ui" style="display:none; flex-direction:column; height:100%;">
             <div id="box"></div>
-            <div class="line"><span>MSG> </span><input type="text" id="min" autocapitalize="none"></div>
+            <div class="line"><span>SEND> </span><input type="text" id="min" autocapitalize="none" autocomplete="off"></div>
         </div>
     </div>
 </div>
@@ -54,18 +67,22 @@
 
     const run = {
         'help': 'scan, dig [url], clear, status',
-        'status': () => `NET: ${navigator.onLine?'ONLINE':'OFFLINE'}\nCPU: ${navigator.hardwareConcurrency}`,
+        'status': () => `NET: ${navigator.onLine?'ONLINE':'OFFLINE'}\nCPU_THREADS: ${navigator.hardwareConcurrency}`,
         'clear': () => { out.innerHTML = ''; return ''; },
         'scan': async () => {
-            const r = await fetch('https://ipapi.co');
-            const d = await r.json();
-            return `IP: ${d.ip}\nLOC: ${d.city}, ${d.region}\nORG: ${d.org}`;
+            try {
+                const r = await fetch('https://ipapi.co');
+                const d = await r.json();
+                return `PUBLIC_IP: ${d.ip}\nGATEWAY: ${d.org}\nCOORDS: ${d.latitude}, ${d.longitude}`;
+            } catch(e) { return "TRACE_FAILED: CHECK CONNECTION"; }
         },
         'dig': async (a) => {
-            if(!a[0]) return "ERR: URL MISSING";
-            const r = await fetch(`https://dns.google{a[0]}`);
-            const d = await r.json();
-            return d.Answer ? d.Answer.map(x => `[${x.type}] ${x.data}`).join('\n') : "NO RECORDS";
+            if(!a[0]) return "ERR: HOST_REQUIRED";
+            try {
+                const r = await fetch(`https://dns.google{a[0]}`);
+                const d = await r.json();
+                return d.Answer ? d.Answer.map(x => `[${x.type}] ${x.data}`).join('\n') : "NXDOMAIN";
+            } catch(e) { return "DNS_QUERY_BLOCKED"; }
         }
     };
 
@@ -78,7 +95,7 @@
                 const res = typeof run[c] === 'function' ? await run[c](a) : run[c];
                 print(res);
             }
-            window.scrollTo(0,0);
+            document.getElementById('term').scrollTop = document.getElementById('term').scrollHeight;
         }
     });
 
@@ -97,59 +114,49 @@
 
     function loadMap() {
         if(map) return;
-        map = L.map('map', {zoomControl:false}).setView([0,0], 2);
+        map = L.map('map', {zoomControl:false}).setView(, 2);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         navigator.geolocation.getCurrentPosition(p => map.setView([p.coords.latitude, p.coords.longitude], 14));
     }
 
-    // FIXED MESSAGE CONNECTION
     function conn() {
         const p = document.getElementById('port').value;
         if(!p) return;
         
-        // Setup Peer with the specific ID
         peer = new Peer('ops-node-' + p);
         
         peer.on('open', (id) => {
-            // SHOW UI immediately when server is ready
             document.getElementById('set').style.display = 'none';
             document.getElementById('ui').style.display = 'flex';
-            msg("SYS", "CONNECTED AS: " + id);
+            msg("SYS", "TUNNEL OPENED ON ID: " + p, "#555");
             
-            // Try to find the other tab
+            // Auto-handshake
             const request = peer.connect('ops-node-' + p);
-            if(request) {
-                link = request;
-                setupLink();
-            }
+            if(request) { link = request; setupLink(); }
         });
 
         peer.on('connection', (c) => {
             link = c;
             setupLink();
         });
-
-        peer.on('error', (err) => {
-            alert("Connection Error: " + err.type);
-        });
     }
 
     function setupLink() {
-        link.on('data', d => msg("REMOTE", d));
-        link.on('open', () => msg("SYS", "PEER LINK ESTABLISHED"));
+        link.on('data', d => msg("REMOTE", d, "var(--cyan)"));
+        link.on('open', () => msg("SYS", "P2P_LINK_ESTABLISHED", "#00ff00"));
     }
 
     document.getElementById('min').addEventListener('keydown', (e) => {
         if(e.key === 'Enter' && link) {
             link.send(e.target.value);
-            msg("YOU", e.target.value);
+            msg("YOU", e.target.value, "#fff");
             e.target.value = '';
         }
     });
 
-    function msg(u, m) {
+    function msg(u, m, col) {
         const d = document.createElement('div');
-        d.innerHTML = `<span style="color:#fff">[${u}]</span> ${m}`;
+        d.innerHTML = `<span style="color:${col || '#777'}">[${u}]</span> ${m}`;
         document.getElementById('box').appendChild(d);
         document.getElementById('box').scrollTop = document.getElementById('box').scrollHeight;
     }
