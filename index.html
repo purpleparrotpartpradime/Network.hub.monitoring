@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- Leaflet CSS - Verified -->
     <link rel="stylesheet" href="https://unpkg.com" />
     <style>
-        :root { --cyan: #00f2ff; --blue: #003366; --bg: #00050a; }
-        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--cyan); font-family: monospace; height: 100vh; overflow: hidden; }
+        :root { --c: #00f2ff; --bg: #000; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--c); font-family: monospace; height: 100vh; overflow: hidden; }
         #main { display: flex; flex-direction: column; height: 100vh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
-        nav { display: flex; background: var(--blue); border-bottom: 1px solid var(--cyan); flex-shrink: 0; }
-        .t { flex: 1; padding: 20px 0; text-align: center; font-size: 12px; cursor: pointer; border-right: 1px solid #004488; }
-        .t.active { background: var(--cyan); color: #000; font-weight: bold; }
-        .p { display: none; flex: 1; overflow: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
+        nav { display: flex; background: #001a33; border-bottom: 1px solid var(--c); flex-shrink: 0; }
+        .t { flex: 1; padding: 20px 0; text-align: center; font-size: 12px; cursor: pointer; border-right: 1px solid #222; }
+        .t.active { background: var(--c); color: #000; font-weight: bold; }
+        .p { display: none; flex: 1; overflow: auto; padding: 15px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
         .p.active { display: flex; flex-direction: column; }
         #out, #box { white-space: pre-wrap; font-size: 14px; flex: 1; }
-        .line { display: flex; padding: 15px 0; border-top: 1px solid var(--blue); flex-shrink: 0; }
-        input { background: transparent; border: none; color: var(--cyan); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
-        #map { height: 100%; width: 100%; filter: invert(1) hue-rotate(180deg) brightness(0.8); background: #000; }
-        button { background: var(--cyan); color: #000; border: none; padding: 15px; font-weight: bold; width: 100%; margin-top: 10px; }
+        /* Keyboard Fix: Increased padding and height */
+        .line { display: flex; padding: 20px 10px; border-top: 1px solid #222; background: #000; position: sticky; bottom: 0; flex-shrink: 0; z-index: 100; }
+        input { background: transparent; border: none; color: var(--c); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
+        #map { height: 100%; width: 100%; filter: invert(1) hue-rotate(180deg); background: #000; }
+        button { background: var(--c); color: #000; border: none; padding: 15px; font-weight: bold; width: 100%; margin-top: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -26,7 +26,6 @@
     <nav>
         <div class="t active" onclick="tab('term')">TERM</div>
         <div class="t" onclick="tab('sat')">MAP</div>
-        <div class="t" onclick="tab('net')">LOG</div>
         <div class="t" onclick="tab('msg')">MSG</div>
     </nav>
     <div id="term" class="p active">
@@ -34,11 +33,10 @@
         <div class="line"><span>> </span><input type="text" id="in" spellcheck="false" autocomplete="off" autocapitalize="none"></div>
     </div>
     <div id="sat" class="p"><div id="map"></div></div>
-    <div id="net" class="p"><div id="logs"></div></div>
     <div id="msg" class="p">
         <div id="set">
-            <input type="number" id="port" placeholder="PORT_ID">
-            <button onclick="conn()">ESTABLISH_P2P</button>
+            <input type="number" id="port" placeholder="ENTER PORT (e.g. 5555)" style="border: 1px solid var(--c); text-align: center; padding: 10px; width: 90%;">
+            <button onclick="conn()">CONNECT</button>
         </div>
         <div id="ui" style="display:none; flex-direction:column; height:100%;">
             <div id="box"></div>
@@ -47,7 +45,6 @@
     </div>
 </div>
 
-<!-- Libraries - Verified Paths -->
 <script src="https://unpkg.com"></script>
 <script src="https://unpkg.com"></script>
 <script>
@@ -56,25 +53,19 @@
     let map, peer, link;
 
     const run = {
-        'help': 'scan, dig [url], status, clear',
+        'help': 'scan, dig [url], clear, status',
         'status': () => `NET: ${navigator.onLine?'ONLINE':'OFFLINE'}\nCPU: ${navigator.hardwareConcurrency}`,
         'clear': () => { out.innerHTML = ''; return ''; },
         'scan': async () => {
-            print("INITIALIZING GEOTRACE...", "#555");
-            try {
-                const r = await fetch('https://ipapi.co');
-                const d = await r.json();
-                return `IP: ${d.ip}\nLOC: ${d.city}, ${d.region}\nORG: ${d.org}\nLAT: ${d.latitude}\nLON: ${d.longitude}`;
-            } catch(e) { return "ERR: REQUEST BLOCKED BY BROWSER"; }
+            const r = await fetch('https://ipapi.co');
+            const d = await r.json();
+            return `IP: ${d.ip}\nLOC: ${d.city}, ${d.region}\nORG: ${d.org}`;
         },
         'dig': async (a) => {
             if(!a[0]) return "ERR: URL MISSING";
-            print(`RESOLVING ${a[0]}...`, "#555");
-            try {
-                const r = await fetch(`https://dns.google{a[0]}`);
-                const d = await r.json();
-                return d.Answer ? d.Answer.map(x => `[${x.type}] ${x.data}`).join('\n') : "NO RECORDS";
-            } catch(e) { return "ERR: DNS_FETCH_FAILED"; }
+            const r = await fetch(`https://dns.google{a[0]}`);
+            const d = await r.json();
+            return d.Answer ? d.Answer.map(x => `[${x.type}] ${x.data}`).join('\n') : "NO RECORDS";
         }
     };
 
@@ -87,13 +78,13 @@
                 const res = typeof run[c] === 'function' ? await run[c](a) : run[c];
                 print(res);
             }
-            document.getElementById('term').scrollTop = document.getElementById('term').scrollHeight;
+            window.scrollTo(0,0);
         }
     });
 
-    function print(t, c) {
+    function print(t, col) {
         const d = document.createElement('div');
-        d.textContent = t; if(c) d.style.color = c;
+        d.textContent = t; if(col) d.style.color = col;
         out.appendChild(d);
     }
 
@@ -111,25 +102,41 @@
         navigator.geolocation.getCurrentPosition(p => map.setView([p.coords.latitude, p.coords.longitude], 14));
     }
 
+    // FIXED MESSAGE CONNECTION
     function conn() {
         const p = document.getElementById('port').value;
         if(!p) return;
-        // P2P Setup
+        
+        // Setup Peer with the specific ID
         peer = new Peer('ops-node-' + p);
-        peer.on('open', () => {
+        
+        peer.on('open', (id) => {
+            // SHOW UI immediately when server is ready
             document.getElementById('set').style.display = 'none';
             document.getElementById('ui').style.display = 'flex';
-            msg("SYS", "TUNNEL OPEN: " + p);
+            msg("SYS", "CONNECTED AS: " + id);
+            
+            // Try to find the other tab
+            const request = peer.connect('ops-node-' + p);
+            if(request) {
+                link = request;
+                setupLink();
+            }
         });
-        peer.on('connection', (c) => { 
-            link = c; 
-            link.on('data', d => msg("REMOTE", d)); 
+
+        peer.on('connection', (c) => {
+            link = c;
+            setupLink();
         });
-        const request = peer.connect('ops-node-' + p);
-        if(request) { 
-            link = request; 
-            link.on('data', d => msg("REMOTE", d)); 
-        }
+
+        peer.on('error', (err) => {
+            alert("Connection Error: " + err.type);
+        });
+    }
+
+    function setupLink() {
+        link.on('data', d => msg("REMOTE", d));
+        link.on('open', () => msg("SYS", "PEER LINK ESTABLISHED"));
     }
 
     document.getElementById('min').addEventListener('keydown', (e) => {
