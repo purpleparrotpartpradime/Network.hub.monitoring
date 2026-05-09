@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- Leaflet CSS - Verified -->
+    <link rel="stylesheet" href="https://unpkg.com" />
     <style>
-        :root { --c: #00f2ff; --bg: #000; }
-        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--c); font-family: monospace; height: 100vh; overflow: hidden; }
+        :root { --cyan: #00f2ff; --blue: #003366; --bg: #00050a; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--cyan); font-family: monospace; height: 100vh; overflow: hidden; }
         #main { display: flex; flex-direction: column; height: 100vh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
-        nav { display: flex; background: #111; border-bottom: 1px solid var(--c); flex-shrink: 0; }
-        .t { flex: 1; padding: 20px 0; text-align: center; font-size: 12px; cursor: pointer; border-right: 1px solid #222; }
-        .t.active { background: var(--c); color: #000; font-weight: bold; }
+        nav { display: flex; background: var(--blue); border-bottom: 1px solid var(--cyan); flex-shrink: 0; }
+        .t { flex: 1; padding: 20px 0; text-align: center; font-size: 12px; cursor: pointer; border-right: 1px solid #004488; }
+        .t.active { background: var(--cyan); color: #000; font-weight: bold; }
         .p { display: none; flex: 1; overflow: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
         .p.active { display: flex; flex-direction: column; }
         #out, #box { white-space: pre-wrap; font-size: 14px; flex: 1; }
-        .line { display: flex; padding: 15px 0; border-top: 1px solid #222; flex-shrink: 0; }
-        input { background: transparent; border: none; color: var(--c); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
-        #map { height: 100%; width: 100%; filter: invert(1) hue-rotate(180deg); background: #000; }
-        button { background: var(--c); color: #000; border: none; padding: 15px; font-weight: bold; width: 100%; margin-top: 10px; }
+        .line { display: flex; padding: 15px 0; border-top: 1px solid var(--blue); flex-shrink: 0; }
+        input { background: transparent; border: none; color: var(--cyan); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
+        #map { height: 100%; width: 100%; filter: invert(1) hue-rotate(180deg) brightness(0.8); background: #000; }
+        button { background: var(--cyan); color: #000; border: none; padding: 15px; font-weight: bold; width: 100%; margin-top: 10px; }
     </style>
-    <link rel="stylesheet" href="https://jsdelivr.net" />
 </head>
 <body>
 <div id="main">
@@ -36,8 +37,8 @@
     <div id="net" class="p"><div id="logs"></div></div>
     <div id="msg" class="p">
         <div id="set">
-            <input type="number" id="port" placeholder="ENTER PORT ID">
-            <button onclick="conn()">CONNECT</button>
+            <input type="number" id="port" placeholder="PORT_ID">
+            <button onclick="conn()">ESTABLISH_P2P</button>
         </div>
         <div id="ui" style="display:none; flex-direction:column; height:100%;">
             <div id="box"></div>
@@ -46,8 +47,9 @@
     </div>
 </div>
 
-<script src="https://jsdelivr.net"></script>
-<script src="https://jsdelivr.net"></script>
+<!-- Libraries - Verified Paths -->
+<script src="https://unpkg.com"></script>
+<script src="https://unpkg.com"></script>
 <script>
     const out = document.getElementById('out');
     const cmd = document.getElementById('in');
@@ -55,18 +57,24 @@
 
     const run = {
         'help': 'scan, dig [url], status, clear',
-        'status': () => `NET: ${navigator.onLine?'ON':'OFF'}\nCPU: ${navigator.hardwareConcurrency}`,
+        'status': () => `NET: ${navigator.onLine?'ONLINE':'OFFLINE'}\nCPU: ${navigator.hardwareConcurrency}`,
         'clear': () => { out.innerHTML = ''; return ''; },
         'scan': async () => {
-            const r = await fetch('https://ipapi.co');
-            const d = await r.json();
-            return `IP: ${d.ip}\nLOC: ${d.city}\nISP: ${d.org}`;
+            print("INITIALIZING GEOTRACE...", "#555");
+            try {
+                const r = await fetch('https://ipapi.co');
+                const d = await r.json();
+                return `IP: ${d.ip}\nLOC: ${d.city}, ${d.region}\nORG: ${d.org}\nLAT: ${d.latitude}\nLON: ${d.longitude}`;
+            } catch(e) { return "ERR: REQUEST BLOCKED BY BROWSER"; }
         },
         'dig': async (a) => {
             if(!a[0]) return "ERR: URL MISSING";
-            const r = await fetch(`https://dns.google{a[0]}`);
-            const d = await r.json();
-            return d.Answer ? d.Answer.map(x => x.data).join('\n') : "NO RECORDS";
+            print(`RESOLVING ${a[0]}...`, "#555");
+            try {
+                const r = await fetch(`https://dns.google{a[0]}`);
+                const d = await r.json();
+                return d.Answer ? d.Answer.map(x => `[${x.type}] ${x.data}`).join('\n') : "NO RECORDS";
+            } catch(e) { return "ERR: DNS_FETCH_FAILED"; }
         }
     };
 
@@ -74,7 +82,7 @@
         if(e.key === 'Enter') {
             const [c, ...a] = cmd.value.trim().toLowerCase().split(' ');
             print(`> ${cmd.value}`, '#fff');
-            const val = cmd.value; cmd.value = '';
+            cmd.value = '';
             if(run[c]) {
                 const res = typeof run[c] === 'function' ? await run[c](a) : run[c];
                 print(res);
@@ -106,14 +114,22 @@
     function conn() {
         const p = document.getElementById('port').value;
         if(!p) return;
-        peer = new Peer('node-' + p);
+        // P2P Setup
+        peer = new Peer('ops-node-' + p);
         peer.on('open', () => {
             document.getElementById('set').style.display = 'none';
             document.getElementById('ui').style.display = 'flex';
+            msg("SYS", "TUNNEL OPEN: " + p);
         });
-        peer.on('connection', (c) => { link = c; link.on('data', d => msg("REMOTE", d)); });
-        const request = peer.connect('node-' + p);
-        if(request) { link = request; link.on('data', d => msg("REMOTE", d)); }
+        peer.on('connection', (c) => { 
+            link = c; 
+            link.on('data', d => msg("REMOTE", d)); 
+        });
+        const request = peer.connect('ops-node-' + p);
+        if(request) { 
+            link = request; 
+            link.on('data', d => msg("REMOTE", d)); 
+        }
     }
 
     document.getElementById('min').addEventListener('keydown', (e) => {
@@ -126,8 +142,9 @@
 
     function msg(u, m) {
         const d = document.createElement('div');
-        d.textContent = `[${u}] ${m}`;
+        d.innerHTML = `<span style="color:#fff">[${u}]</span> ${m}`;
         document.getElementById('box').appendChild(d);
+        document.getElementById('box').scrollTop = document.getElementById('box').scrollHeight;
     }
 </script>
 </body>
