@@ -10,22 +10,26 @@
         :root { --pink: #ff00ff; --cyan: #00ffff; --purple: #2d004d; --bg: #050010; }
         body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: "Avenir Next", sans-serif; height: 100%; width: 100%; overflow: hidden; position: fixed; }
 
-        /* Vaporwave Scene */
-        .scene { position: fixed; inset: 0; z-index: -1; background: linear-gradient(to bottom, #2d004d 0%, #050010 100%); perspective: 120px; }
-        .sun { position: absolute; top: 20%; left: 50%; width: 160px; height: 160px; background: linear-gradient(#ff00ff, #ff8c00); border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 60px #ff00ff; mask-image: linear-gradient(to bottom, black 70%, transparent 72%, black 76%, transparent 78%, black 82%, transparent 84%, black 88%, transparent 90%, black 94%, transparent 96%, black 100%); }
-        .grid { position: absolute; bottom: -50%; left: -50%; width: 200%; height: 100%; background-image: linear-gradient(var(--cyan) 1px, transparent 1px), linear-gradient(90deg, var(--cyan) 1px, transparent 1px); background-size: 50px 50px; transform: rotateX(60deg); animation: moveGrid 4s linear infinite; opacity: 0.25; }
-        @keyframes moveGrid { from { background-position: 0 0; } to { background-position: 0 50px; } }
+        /* Vaporwave Scene - Fixed Grid Scaling */
+        .scene { position: fixed; inset: 0; z-index: -1; background: linear-gradient(to bottom, #2d004d 0%, #050010 100%); overflow: hidden; }
+        .sun { position: absolute; top: 15%; left: 50%; width: 140px; height: 140px; background: linear-gradient(#ff00ff, #ff8c00); border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 50px #ff00ff; mask-image: linear-gradient(to bottom, black 70%, transparent 72%, black 76%, transparent 78%, black 82%, transparent 84%, black 88%, transparent 90%, black 94%, transparent 96%, black 100%); }
+        
+        /* Grid container handles the perspective/cutoff issues */
+        .grid-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; perspective: 150px; overflow: hidden; }
+        .grid { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background-image: linear-gradient(var(--cyan) 1.5px, transparent 1.5px), linear-gradient(90deg, var(--cyan) 1.5px, transparent 1.5px); background-size: 60px 60px; transform: rotateX(65deg); animation: moveGrid 3s linear infinite; opacity: 0.3; }
+        
+        @keyframes moveGrid { from { background-position: 0 0; } to { background-position: 0 60px; } }
 
         #main { display: flex; flex-direction: column; height: 100%; padding-top: env(safe-area-inset-top); }
-        #header { background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-bottom: 1px solid var(--pink); padding: 15px 20px; display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); letter-spacing: 2px; }
+        #header { background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); border-bottom: 1px solid var(--pink); padding: 15px 20px; display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); letter-spacing: 2px; }
         #setup { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; }
         #chat-ui { display: none; flex: 1; flex-direction: column; overflow: hidden; }
         #box { flex: 1; overflow-y: auto; padding: 25px; -webkit-overflow-scrolling: touch; }
 
-        .line { background: rgba(0,0,0,0.8); backdrop-filter: blur(15px); border-top: 1px solid var(--pink); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
+        .line { background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); border-top: 1px solid var(--pink); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
         input { background: transparent; border: none; color: #fff; font-size: 16px; outline: none; width: 100%; font-family: inherit; }
         #room-id { border: 1px solid var(--cyan); background: rgba(0,0,0,0.6); text-align: center; margin-bottom: 30px; width: 100%; max-width: 260px; padding: 15px; color: #fff; box-shadow: 0 0 15px var(--cyan); border-radius: 4px; }
-        button { background: var(--pink); color: #fff; border: none; padding: 16px; font-weight: 900; border-radius: 4px; cursor: pointer; width: 100%; max-width: 260px; box-shadow: 0 0 20px var(--pink); text-transform: uppercase; letter-spacing: 3px; }
+        button { background: var(--pink); color: #fff; border: none; padding: 16px; font-weight: 900; border-radius: 4px; cursor: pointer; width: 100%; max-width: 260px; box-shadow: 0 0 20px var(--pink); text-transform: uppercase; }
 
         .msg { margin-bottom: 20px; }
         .who { font-size: 10px; color: var(--pink); font-weight: bold; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
@@ -38,12 +42,14 @@
 <body>
 <div class="scene">
     <div class="sun"></div>
-    <div class="grid"></div>
+    <div class="grid-container">
+        <div class="grid"></div>
+    </div>
 </div>
 <div id="main">
     <div id="header" onclick="reboot()">
         <span>Phobos</span>
-        <span id="status">ICN_STBY</span>
+        <span id="status">status</span>
     </div>
     <div id="setup">
         <input type="text" id="room-id" placeholder="CHANNEL_ID" autocomplete="off" spellcheck="false">
@@ -70,9 +76,8 @@
         if (!id) return;
         document.getElementById('setup').style.display = 'none';
         document.getElementById('chat-ui').style.display = 'flex';
-        status.textContent = "ICN_ACTIVE";
+        status.textContent = "active";
 
-        // Internal Phobos naming convention for appId
         room = joinRoom({appId: 'phobos-icn-protocol'}, id);
         const [sendMessage, receiveMessage] = room.makeAction('chat');
         send = sendMessage;
