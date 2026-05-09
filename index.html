@@ -147,7 +147,6 @@
     const box = document.getElementById('box');
     const main = document.getElementById('main');
 
-    // Visual Viewport Fix for iOS Keyboard
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             main.style.height = window.visualViewport.height + 'px';
@@ -160,21 +159,27 @@
         myPort = document.getElementById('port-in').value;
         if (!myPort) return;
 
-        // If Linking, use a random ID for yourself. If Opening, use the chosen ID.
-        const nodeId = isLinkOnly ? 'node-guest-' + Math.floor(Math.random()*9999) : 'node-' + myPort;
+        const nodeId = isLinkOnly ? 'node-guest-' + Math.floor(Math.random()*99999) : 'node-' + myPort;
+        
+        // PeerJS initialization
         peer = new Peer(nodeId);
 
-        peer.on('open', (id) => {
+        peer.on('open', () => {
             document.getElementById('my-id-display').textContent = isLinkOnly ? "GUEST" : myPort;
             document.getElementById('setup').style.display = 'none';
             document.getElementById('chat-ui').style.display = 'flex';
             
-            // If linking, immediately target the ID entered in the box
             if (isLinkOnly) {
-                const request = peer.connect('node-' + myPort);
-                if (request) { conn = request; setupLink(); }
+                // FIXED: Setting serialization to JSON for Safari stability
+                const request = peer.connect('node-' + myPort, { 
+                    serialization: 'json',
+                    reliable: true 
+                });
+                if (request) { 
+                    conn = request; 
+                    setupLink(); 
+                }
             } else {
-                // Host logic: listen for incoming
                 addLog("CHANNEL_HOSTED: " + myPort);
             }
         });
@@ -187,14 +192,19 @@
         peer.on('error', (err) => {
             if (err.type === 'id-taken') alert("ID_IN_USE");
             else if (err.type === 'peer-not-found') alert("ID_NOT_ONLINE");
-            else alert("ERR: " + err.type);
-            location.reload();
+            else console.error(err);
         });
     }
 
     function setupLink() {
-        conn.on('data', data => addMsg("REMOTE", data, false));
-        conn.on('open', () => addLog("LINK_ESTABLISHED"));
+        // Apply listeners once link is confirmed
+        conn.on('open', () => {
+            addLog("LINK_ESTABLISHED");
+        });
+        
+        conn.on('data', data => {
+            addMsg("REMOTE", data, false);
+        });
     }
 
     function addMsg(id, text, isSelf) {
@@ -214,7 +224,7 @@
     }
 
     document.getElementById('msg-in').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && conn) {
+        if (e.key === 'Enter' && conn && conn.open) {
             const m = e.target.value;
             if (!m) return;
             conn.send(m);
