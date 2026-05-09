@@ -5,146 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Phobos Core</title>
+    <title>Aesthetica</title>
     <style>
-        :root { 
-            --trace: #002d5a; 
-            --glow: #00a2ff; 
-            --bg: #00050a; 
-            --panel: rgba(0, 15, 30, 0.85);
-        }
-        
-        body, html { 
-            margin: 0; padding: 0; background: var(--bg); 
-            color: #fff; font-family: "SF Mono", "Menlo", monospace; 
-            height: 100%; width: 100%; overflow: hidden; position: fixed;
-        }
+        :root { --pink: #ff00ff; --cyan: #00ffff; --purple: #2d004d; --bg: #050010; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: "Avenir Next", sans-serif; height: 100%; width: 100%; overflow: hidden; position: fixed; }
 
-        /* Circuit Board Background Pattern */
-        .circuit-bg {
-            position: fixed; inset: 0; z-index: -1;
-            background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 2px 2px, var(--trace) 1px, transparent 0);
-            background-size: 40px 40px;
-            opacity: 0.4;
-        }
-        .circuit-bg::after {
-            content: ""; position: absolute; inset: 0;
-            background-image: linear-gradient(var(--trace) 1px, transparent 1px), 
-                              linear-gradient(90deg, var(--trace) 1px, transparent 1px);
-            background-size: 100px 100px;
-            mask-image: radial-gradient(circle, black, transparent 80%);
-        }
+        /* Vaporwave Scene */
+        .scene { position: fixed; inset: 0; z-index: -1; background: linear-gradient(to bottom, #2d004d 0%, #050010 100%); perspective: 120px; }
+        .sun { position: absolute; top: 20%; left: 50%; width: 160px; height: 160px; background: linear-gradient(#ff00ff, #ff8c00); border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 60px #ff00ff; mask-image: linear-gradient(to bottom, black 70%, transparent 72%, black 76%, transparent 78%, black 82%, transparent 84%, black 88%, transparent 90%, black 94%, transparent 96%, black 100%); }
+        .grid { position: absolute; bottom: -50%; left: -50%; width: 200%; height: 100%; background-image: linear-gradient(var(--cyan) 1px, transparent 1px), linear-gradient(90deg, var(--cyan) 1px, transparent 1px); background-size: 50px 50px; transform: rotateX(60deg); animation: moveGrid 4s linear infinite; opacity: 0.25; }
+        @keyframes moveGrid { from { background-position: 0 0; } to { background-position: 0 50px; } }
 
         #main { display: flex; flex-direction: column; height: 100%; padding-top: env(safe-area-inset-top); }
-        
-        #header { 
-            background: var(--panel); border-bottom: 1px solid var(--trace); 
-            padding: 15px 20px; display: flex; justify-content: space-between; 
-            font-size: 11px; letter-spacing: 1px; color: var(--glow);
-        }
-
+        #header { background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border-bottom: 1px solid var(--pink); padding: 15px 20px; display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); letter-spacing: 2px; }
         #setup { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; }
-        
         #chat-ui { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-        
-        #box { flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
+        #box { flex: 1; overflow-y: auto; padding: 25px; -webkit-overflow-scrolling: touch; }
 
-        .line { 
-            background: var(--panel); border-top: 1px solid var(--trace); 
-            padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom));
-        }
+        .line { background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); border-top: 1px solid var(--pink); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
+        input { background: transparent; border: none; color: #fff; font-size: 16px; outline: none; width: 100%; font-family: inherit; }
+        #room-id { border: 1px solid var(--cyan); background: rgba(0,0,0,0.4); text-align: center; margin-bottom: 30px; width: 100%; max-width: 260px; padding: 15px; color: #fff; box-shadow: 0 0 15px var(--cyan); border-radius: 4px; }
+        button { background: var(--pink); color: #fff; border: none; padding: 16px; font-weight: 900; border-radius: 4px; cursor: pointer; width: 100%; max-width: 260px; box-shadow: 0 0 20px var(--pink); text-transform: uppercase; letter-spacing: 3px; }
 
-        input { 
-            background: transparent; border: none; color: #fff; 
-            font-size: 16px; outline: none; width: 100%; font-family: inherit; 
-        }
-
-        #room-id { 
-            border: 1px solid var(--trace); background: rgba(0,0,0,0.5);
-            text-align: center; margin-bottom: 25px; width: 100%; 
-            max-width: 260px; padding: 15px; color: var(--glow);
-            box-shadow: 0 0 15px rgba(0, 162, 255, 0.1);
-        }
-
-        button { 
-            background: var(--glow); color: #000; border: none; 
-            padding: 15px 30px; font-weight: bold; border-radius: 2px; 
-            cursor: pointer; width: 100%; max-width: 260px;
-            box-shadow: 0 0 10px var(--glow);
-        }
-
-        .msg { margin-bottom: 15px; border-left: 2px solid var(--trace); padding-left: 12px; }
-        .who { font-size: 9px; color: var(--glow); opacity: 0.7; margin-bottom: 4px; }
-        .txt { font-size: 14px; line-height: 1.5; color: #e0eefb; word-break: break-all; }
-        .self { border-left-color: var(--glow); }
-        .log { font-size: 10px; color: var(--trace); text-align: center; margin: 15px 0; }
+        .msg { margin-bottom: 20px; }
+        .who { font-size: 10px; color: var(--pink); font-weight: bold; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .txt { font-size: 16px; color: #fff; text-shadow: 0 0 8px var(--cyan); line-height: 1.4; }
+        .self { text-align: right; }
+        .self .who { color: var(--cyan); }
+        .log { font-size: 10px; color: rgba(255,255,255,0.2); text-align: center; margin: 15px 0; }
     </style>
 </head>
 <body>
-<div class="circuit-bg"></div>
+<div class="scene">
+    <div class="sun"></div>
+    <div class="grid"></div>
+</div>
 <div id="main">
     <div id="header" onclick="reboot()">
-        <span>PHOBOS CORE v3.0</span>
-        <span id="status">OFFLINE</span>
+        <span>ＡＥＳＴＨＥＴＩＣ</span>
+        <span id="status">ＳＴＢＹ</span>
     </div>
-    
     <div id="setup">
-        <input type="text" id="room-id" placeholder="Channel Key" autocomplete="off" spellcheck="false">
-        <button onclick="boot()">Access Network</button>
+        <input type="text" id="room-id" placeholder="CHANNEL_ID" autocomplete="off" spellcheck="false">
+        <button onclick="boot()">Connect</button>
     </div>
-
     <div id="chat-ui">
-        <div id="box"></div>
+        <div id="box" style="display: flex; flex-direction: column;"></div>
         <div class="line">
-            <input type="text" id="msg-in" placeholder="Type message..." autocomplete="off">
+            <input type="text" id="msg-in" placeholder="Enter message..." autocomplete="off">
         </div>
     </div>
 </div>
 
 <script type="module">
     import {joinRoom} from 'https://esm.run';
-
     let room, send, taps = 0;
     const status = document.getElementById('status');
     const box = document.getElementById('box');
 
-    window.reboot = () => {
-        taps++;
-        if (taps >= 3) location.reload();
-        setTimeout(() => taps = 0, 2000);
-    };
+    window.reboot = () => { if (++taps >= 3) location.reload(); setTimeout(() => taps = 0, 2000); };
 
     window.boot = () => {
         const id = document.getElementById('room-id').value.trim();
         if (!id) return;
-
         document.getElementById('setup').style.display = 'none';
         document.getElementById('chat-ui').style.display = 'flex';
-        status.textContent = "SYNCING";
+        status.textContent = "ＬＩＮＫＥＤ";
 
-        room = joinRoom({appId: 'phobos-circuit-v3'}, id);
+        room = joinRoom({appId: 'vapor-v2'}, id);
         const [sendMessage, receiveMessage] = room.makeAction('chat');
         send = sendMessage;
 
-        room.onPeerJoin(peerId => {
-            status.textContent = "ENCRYPTED";
-            addLog(`Link established with ${peerId.slice(0,4)}`);
-        });
-
-        room.onPeerLeave(() => {
-            if (Object.keys(room.getPeers()).length === 0) status.textContent = "SEARCHING";
-        });
-
-        receiveMessage((data, peerId) => {
-            addMsg(`User ${peerId.slice(0,4)}`, data, false);
-        });
+        room.onPeerJoin(peerId => addLog(`User ${peerId.slice(0,4)} joined the dream.`));
+        receiveMessage((data, peerId) => addMsg(`User ${peerId.slice(0,4)}`, data, false));
 
         document.getElementById('msg-in').onkeydown = e => {
             if (e.key === 'Enter' && e.target.value.trim()) {
                 send(e.target.value);
-                addMsg("Local", e.target.value, true);
+                addMsg("Me", e.target.value, true);
                 e.target.value = '';
             }
         };
