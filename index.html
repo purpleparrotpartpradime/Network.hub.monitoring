@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Phobos</title>
+    <title>SECURE_LINK</title>
     <style>
         :root { 
             --cyan: #00f2ff; 
@@ -13,7 +13,6 @@
             --safe-top: env(safe-area-inset-top);
         }
         
-        /* The body now stays exactly as tall as the visible screen (above keyboard) */
         body, html { 
             margin: 0; padding: 0; 
             background: var(--bg); 
@@ -21,7 +20,7 @@
             font-family: 'Courier New', monospace; 
             height: 100%; width: 100vw;
             overflow: hidden; 
-            position: fixed; /* Prevents the whole page from bouncing */
+            position: fixed;
         }
         
         #main { 
@@ -46,6 +45,7 @@
             flex-direction: column; 
             justify-content: center; 
             align-items: center; 
+            padding: 20px;
         }
 
         #chat-ui { 
@@ -85,17 +85,32 @@
             border-bottom: 1px solid var(--cyan); 
             text-align: center; 
             margin-bottom: 30px; 
-            width: 70%; 
+            width: 80%; 
             padding: 10px;
         }
         
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+
         button { 
+            flex: 1;
             background: var(--cyan); 
             color: #000; 
             border: none; 
-            padding: 20px 40px; 
+            padding: 20px 0; 
             font-weight: bold; 
             border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .btn-alt {
+            background: var(--dark-blue);
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
         }
 
         .msg-wrap { margin-bottom: 15px; border-left: 2px solid var(--dark-blue); padding-left: 12px; }
@@ -108,17 +123,20 @@
 <body>
 
 <div id="main">
-    <div id="header">LINK_ID: <span id="my-id-display">PENDING</span></div>
+    <div id="header">ID_STATUS: <span id="my-id-display">PENDING</span></div>
 
     <div id="setup">
         <input type="number" id="port-in" placeholder="ID">
-        <button onclick="initialize()">OPEN CHANNEL</button>
+        <div class="btn-row">
+            <button onclick="initialize(false)">OPEN</button>
+            <button onclick="initialize(true)" class="btn-alt">LINK</button>
+        </div>
     </div>
 
     <div id="chat-ui">
         <div id="box"></div>
         <div class="line">
-            <input type="text" id="msg-in" placeholder="TYPE..." autocomplete="off" autocapitalize="none">
+            <input type="text" id="msg-in" placeholder="TYPE TRANSMISSION..." autocomplete="off" autocapitalize="none">
         </div>
     </div>
 </div>
@@ -129,39 +147,60 @@
     const box = document.getElementById('box');
     const main = document.getElementById('main');
 
-    // KEYBOARD FIX: Forces the app height to match the visible space
+    // Visual Viewport Fix for iOS Keyboard
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             main.style.height = window.visualViewport.height + 'px';
-            window.scrollTo(0, 0); // Keep the viewport from scrolling away
+            window.scrollTo(0, 0);
             box.scrollTop = box.scrollHeight;
         });
     }
 
-    function initialize() {
+    function initialize(isLinkOnly) {
         myPort = document.getElementById('port-in').value;
         if (!myPort) return;
-        peer = new Peer('node-' + myPort);
-        peer.on('open', () => {
-            document.getElementById('my-id-display').textContent = myPort;
+
+        // If Linking, use a random ID for yourself. If Opening, use the chosen ID.
+        const nodeId = isLinkOnly ? 'node-guest-' + Math.floor(Math.random()*9999) : 'node-' + myPort;
+        peer = new Peer(nodeId);
+
+        peer.on('open', (id) => {
+            document.getElementById('my-id-display').textContent = isLinkOnly ? "GUEST" : myPort;
             document.getElementById('setup').style.display = 'none';
             document.getElementById('chat-ui').style.display = 'flex';
-            const request = peer.connect('node-' + myPort);
-            if (request) { conn = request; setupLink(); }
+            
+            // If linking, immediately target the ID entered in the box
+            if (isLinkOnly) {
+                const request = peer.connect('node-' + myPort);
+                if (request) { conn = request; setupLink(); }
+            } else {
+                // Host logic: listen for incoming
+                addLog("CHANNEL_HOSTED: " + myPort);
+            }
         });
-        peer.on('connection', (c) => { conn = c; setupLink(); });
-        peer.on('error', (err) => { if (err.type === 'id-taken') { alert("ID TAKEN"); location.reload(); } });
+
+        peer.on('connection', (c) => {
+            conn = c;
+            setupLink();
+        });
+
+        peer.on('error', (err) => {
+            if (err.type === 'id-taken') alert("ID_IN_USE");
+            else if (err.type === 'peer-not-found') alert("ID_NOT_ONLINE");
+            else alert("ERR: " + err.type);
+            location.reload();
+        });
     }
 
     function setupLink() {
-        conn.on('data', data => addMsg(myPort, data, false));
-        conn.on('open', () => addLog("CONNECTED"));
+        conn.on('data', data => addMsg("REMOTE", data, false));
+        conn.on('open', () => addLog("LINK_ESTABLISHED"));
     }
 
     function addMsg(id, text, isSelf) {
         const div = document.createElement('div');
         div.className = 'msg-wrap' + (isSelf ? ' self' : '');
-        div.innerHTML = `<span class="sender-id">ID: ${id}</span><span class="msg-text">${text}</span>`;
+        div.innerHTML = `<span class="sender-id">${id}</span><span class="msg-text">${text}</span>`;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
     }
@@ -179,7 +218,7 @@
             const m = e.target.value;
             if (!m) return;
             conn.send(m);
-            addMsg(myPort, m, true);
+            addMsg("YOU", m, true);
             e.target.value = '';
         }
     });
