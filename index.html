@@ -5,60 +5,131 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>SECURE_LINK</title>
     <style>
-        :root { --cyan: #00f2ff; --navy: #000a1a; --dark-blue: #001a33; --bg: #00050a; }
-        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--cyan); font-family: 'Courier New', monospace; height: 100vh; overflow: hidden; }
+        :root { 
+            --cyan: #00f2ff; 
+            --navy: #000a1a; 
+            --dark-blue: #001a33; 
+            --bg: #00050a;
+            /* iOS Safe Area Constants */
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+        
+        body, html { 
+            margin: 0; padding: 0; 
+            background: var(--bg); 
+            color: var(--cyan); 
+            font-family: 'Courier New', monospace; 
+            height: 100vh; width: 100vw;
+            overflow: hidden; 
+        }
         
         #main { 
-            display: flex; flex-direction: column; height: 100vh; 
-            padding-top: env(safe-area-inset-top); 
-            padding-bottom: env(safe-area-inset-bottom);
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            /* Pushes content away from the top notch/black bar */
+            padding-top: var(--safe-top);
         }
 
         #header { 
-            background: var(--navy); border-bottom: 2px solid var(--dark-blue); 
-            padding: 15px; text-align: center; font-size: 12px; letter-spacing: 2px;
+            background: var(--navy); 
+            border-bottom: 2px solid var(--dark-blue); 
+            padding: 15px; 
+            text-align: center; 
+            font-size: 12px; 
+            letter-spacing: 2px;
+            flex-shrink: 0;
         }
 
-        #setup { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-        #chat-ui { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        #setup { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 20px; 
+        }
 
-        #box { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
+        #chat-ui { 
+            display: none; 
+            flex: 1; 
+            flex-direction: column; 
+            overflow: hidden; 
+            /* Pushes input bar above the bottom home indicator */
+            padding-bottom: var(--safe-bottom);
+        }
+
+        #box { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            -webkit-overflow-scrolling: touch; 
+        }
         
         .line { 
-            display: flex; padding: 15px; background: var(--navy); 
-            border-top: 1px solid var(--dark-blue); position: sticky; bottom: 0; z-index: 100;
+            display: flex; 
+            padding: 20px 15px; 
+            background: var(--navy); 
+            border-top: 1px solid var(--dark-blue); 
+            flex-shrink: 0;
         }
 
-        input { background: transparent; border: none; color: var(--cyan); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
-        #port-in { border-bottom: 1px solid var(--cyan); text-align: center; margin-bottom: 20px; width: 80%; }
+        input { 
+            background: transparent; 
+            border: none; 
+            color: var(--cyan); 
+            font-size: 16px; /* Prevents auto-zoom on iOS */
+            outline: none; 
+            width: 100%; 
+            font-family: inherit; 
+        }
+
+        #port-in { 
+            border-bottom: 1px solid var(--cyan); 
+            text-align: center; 
+            margin-bottom: 30px; 
+            width: 80%; 
+            padding: 10px;
+        }
         
         button { 
-            background: var(--cyan); color: #000; border: none; padding: 15px 30px; 
-            font-weight: bold; cursor: pointer; text-transform: uppercase; border-radius: 2px;
+            background: var(--cyan); 
+            color: #000; 
+            border: none; 
+            padding: 20px 40px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            border-radius: 4px;
         }
 
-        .msg-wrap { margin-bottom: 12px; border-left: 1px solid var(--dark-blue); padding-left: 10px; }
-        .sender-id { font-size: 10px; color: #555; display: block; margin-bottom: 2px; }
-        .msg-text { font-size: 14px; line-height: 1.4; }
-        .self { border-left: 1px solid var(--cyan); }
-        .sys { color: #444; font-style: italic; font-size: 11px; text-align: center; }
+        .msg-wrap { 
+            margin-bottom: 15px; 
+            border-left: 2px solid var(--dark-blue); 
+            padding-left: 12px; 
+        }
+        .sender-id { font-size: 10px; color: #555; display: block; margin-bottom: 4px; }
+        .msg-text { font-size: 14px; line-height: 1.5; color: #fff; }
+        .self { border-left: 2px solid var(--cyan); }
+        .sys { color: #444; font-style: italic; font-size: 11px; text-align: center; margin: 10px 0; }
     </style>
 </head>
 <body>
 
 <div id="main">
-    <div id="header">LINK_ID: <span id="my-id-display">NOT_CONNECTED</span></div>
+    <div id="header">LINK_ID: <span id="my-id-display">PENDING...</span></div>
 
     <div id="setup">
-        <p style="font-size: 11px; margin-bottom: 20px;">ASSIGN UNIQUE PORT ID</p>
-        <input type="number" id="port-in" placeholder="0000" autocomplete="off">
-        <button onclick="initialize()">INITIATE LINK</button>
+        <p style="font-size: 11px; margin-bottom: 25px; color: var(--dark-blue);">ASSIGN UNIQUE ACCESS ID</p>
+        <input type="number" id="port-in" placeholder="8080" autocomplete="off">
+        <button onclick="initialize()">OPEN CHANNEL</button>
     </div>
 
     <div id="chat-ui">
         <div id="box"></div>
         <div class="line">
-            <input type="text" id="msg-in" placeholder="TYPE TRANSMISSION..." autocomplete="off" autocapitalize="none">
+            <input type="text" id="msg-in" placeholder="TRANSMIT DATA..." autocomplete="off" autocapitalize="none">
         </div>
     </div>
 </div>
@@ -72,17 +143,15 @@
         myPort = document.getElementById('port-in').value;
         if (!myPort) return;
 
-        // Start Peer with the chosen ID
-        peer = new Peer('node-net-' + myPort);
+        peer = new Peer('secure-node-' + myPort);
 
-        peer.on('open', (id) => {
+        peer.on('open', () => {
             document.getElementById('my-id-display').textContent = myPort;
             document.getElementById('setup').style.display = 'none';
             document.getElementById('chat-ui').style.display = 'flex';
-            addLog("SECURE TUNNEL OPENED");
+            addLog("ENCRYPTED TUNNEL READY");
 
-            // Attempt to link to the same port globally
-            const request = peer.connect('node-net-' + myPort);
+            const request = peer.connect('secure-node-' + myPort);
             if (request) {
                 conn = request;
                 setupLink();
@@ -96,17 +165,17 @@
 
         peer.on('error', (err) => {
             if (err.type === 'id-taken') {
-                alert("CRITICAL ERROR: ID " + myPort + " IS ALREADY ACTIVE ON NETWORK.");
+                alert("ID ALREADY IN USE. CHOOSE ANOTHER.");
                 location.reload();
             } else {
-                addLog("ERROR: " + err.type);
+                addLog("ERR: " + err.type);
             }
         });
     }
 
     function setupLink() {
-        conn.on('data', data => addMsg(myPort, data, false)); // We use same Port ID for room verification
-        conn.on('open', () => addLog("PEER HANDSHAKE COMPLETE"));
+        conn.on('data', data => addMsg(myPort, data, false));
+        conn.on('open', () => addLog("REMOTE HANDSHAKE SUCCESS"));
     }
 
     function addMsg(id, text, isSelf) {
@@ -125,6 +194,7 @@
         d.className = 'sys';
         d.textContent = ">> " + t;
         box.appendChild(d);
+        box.scrollTop = box.scrollHeight;
     }
 
     document.getElementById('msg-in').addEventListener('keydown', (e) => {
@@ -137,9 +207,9 @@
         }
     });
 
-    // iOS Keyboard fix - scroll to bottom on focus
-    document.getElementById('msg-in').addEventListener('focus', () => {
-        setTimeout(() => box.scrollTop = box.scrollHeight, 300);
+    // Prevents iOS Safari from hiding content when keyboard appears
+    window.visualViewport.addEventListener('resize', () => {
+        document.body.style.height = window.visualViewport.height + 'px';
     });
 </script>
 </body>
