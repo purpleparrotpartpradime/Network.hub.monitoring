@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>TERMINAL_CORE_v5</title>
+    <title>SYS_HUB</title>
     <link rel="stylesheet" href="https://jsdelivr.net" />
     <style>
-        :root { --blue: #00f2ff; --bg: #000; --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
-        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--blue); font-family: 'Consolas', monospace; height: 100vh; width: 100vw; overflow: hidden; }
-        #container { display: flex; flex-direction: column; height: 100vh; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
-        nav { display: flex; background: #111; border-bottom: 2px solid var(--blue); flex-shrink: 0; }
-        .tab { flex: 1; padding: 18px 5px; text-align: center; font-size: 10px; letter-spacing: 1px; border-right: 1px solid #222; text-transform: uppercase; cursor: pointer; }
+        :root { --blue: #00f2ff; --bg: #000; --safe-top: env(safe-area-inset-top); }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--blue); font-family: monospace; height: 100vh; overflow: hidden; }
+        #container { display: flex; flex-direction: column; height: 100vh; padding-top: var(--safe-top); }
+        nav { display: flex; background: #111; border-bottom: 1px solid var(--blue); flex-shrink: 0; }
+        .tab { flex: 1; padding: 15px 0; text-align: center; font-size: 11px; text-transform: uppercase; cursor: pointer; border-right: 1px solid #222; }
         .tab.active { background: var(--blue); color: #000; font-weight: bold; }
         .panel { display: none; flex: 1; overflow: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
         .panel.active { display: flex; flex-direction: column; }
         #term-out, #chat-box { white-space: pre-wrap; font-size: 13px; line-height: 1.4; flex: 1; }
         .input-line { display: flex; align-items: center; border-top: 1px solid #222; padding: 12px 0; flex-shrink: 0; }
         input { background: transparent; border: none; color: var(--blue); font-size: 16px; outline: none; width: 100%; font-family: inherit; }
-        #map { height: 100%; width: 100%; filter: invert(100%) hue-rotate(180deg) brightness(0.6); }
-        .btn { background: var(--blue); color: #000; border: none; padding: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        #map { height: 100%; width: 100%; filter: invert(1) hue-rotate(180deg); }
+        .btn { background: var(--blue); color: #000; border: none; padding: 10px; font-weight: bold; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -27,20 +27,23 @@
     <nav>
         <div class="tab active" onclick="tabs('term')">Console</div>
         <div class="tab" onclick="tabs('sat')">Sat-View</div>
-        <div id="msg-tab" class="tab" onclick="tabs('msg')">Messages</div>
+        <div class="tab" onclick="tabs('net')">Net-Logs</div>
+        <div class="tab" onclick="tabs('msg')">Messages</div>
     </nav>
 
     <div id="term" class="panel active">
-        <div id="term-out">CORE_OS ONLINE. TYPE 'help'...</div>
+        <div id="term-out">READY.</div>
         <div class="input-line"><span>> </span><input type="text" id="cmd" spellcheck="false" autocomplete="off" autocapitalize="none"></div>
     </div>
 
     <div id="sat" class="panel"><div id="map"></div></div>
 
+    <div id="net" class="panel"><div id="log-feed"></div></div>
+
     <div id="msg" class="panel">
         <div id="setup">
-            <input type="number" id="port" placeholder="Port (e.g. 8080)" style="border: 1px solid var(--blue); text-align: center; padding: 10px;">
-            <button class="btn" onclick="initP2P()">ESTABLISH LINK</button>
+            <input type="number" id="port" placeholder="PORT_ID" style="border: 1px solid var(--blue); text-align: center; padding: 10px; width:80%;">
+            <button class="btn" onclick="initP2P()">CONNECT</button>
         </div>
         <div id="chat-ui" style="display:none; flex-direction:column; height:100%;">
             <div id="chat-box"></div>
@@ -51,25 +54,26 @@
 
 <script src="https://jsdelivr.net"></script>
 <script src="https://jsdelivr.net"></script>
+
 <script>
     const termOut = document.getElementById('term-out');
     const cmdIn = document.getElementById('cmd');
     let map, peer, conn;
 
     const commands = {
-        'help': 'scan (live IP/Geo), dig [url] (DNS lookup), status, clear',
-        'status': () => `NET: ${navigator.onLine?'UP':'DOWN'}\nMEM: ${navigator.deviceMemory||'4'}GB\nCORES: ${navigator.hardwareConcurrency}`,
+        'help': 'scan, dig [url], status, clear',
+        'status': () => `NET: ${navigator.onLine?'UP':'DOWN'}\nCORES: ${navigator.hardwareConcurrency}`,
         'clear': () => { termOut.innerHTML = ''; return ''; },
         'scan': async () => {
             const r = await fetch('https://ipapi.co');
             const d = await r.json();
-            return `IPV4: ${d.ip}\nISP: ${d.org}\nLOC: ${d.city}, ${d.country_name}\nCOORDS: ${d.latitude}, ${d.longitude}`;
+            return `IP: ${d.ip}\nLOC: ${d.city}, ${d.country_name}\nISP: ${d.org}`;
         },
         'dig': async (args) => {
-            if(!args[0]) return "ERR: TARGET_REQUIRED";
+            if(!args[0]) return "ERR: URL REQUIRED";
             const r = await fetch(`https://dns.google{args[0]}`);
             const d = await r.json();
-            return d.Answer ? d.Answer.map(a => `[TYPE ${a.type}] ${a.data}`).join('\n') : "NXDOMAIN";
+            return d.Answer ? d.Answer.map(a => `[${a.type}] ${a.data}`).join('\n') : "NXDOMAIN";
         }
     };
 
@@ -81,7 +85,7 @@
             if(commands[c]) {
                 const res = typeof commands[c] === 'function' ? await commands[c](a) : commands[c];
                 if(res) print(res);
-            } else print("UNKNOWN_COMMAND", "red");
+            }
             document.getElementById('term').scrollTop = document.getElementById('term').scrollHeight;
         }
     });
@@ -96,44 +100,43 @@
     function tabs(id) {
         document.querySelectorAll('.panel, .tab').forEach(el => el.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        event.currentTarget.classList.add('active');
         if(id === 'sat') loadSat();
     }
 
     function loadSat() {
-        if(!map) {
+        if(!map && window.L) {
             map = L.map('map', {zoomControl: false}).setView([0,0], 2);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             navigator.geolocation.getCurrentPosition(p => {
-                const pos = [p.coords.latitude, p.coords.longitude];
-                map.setView(pos, 14);
-                L.circle(pos, {radius: 400, color: '#00f2ff', weight: 1}).addTo(map);
+                map.setView([p.coords.latitude, p.coords.longitude], 14);
             });
         }
     }
 
     function initP2P() {
         const p = document.getElementById('port').value;
-        if(!p) return;
-        peer = new Peer('ops-room-' + p);
+        if(!p || !window.Peer) return;
+        peer = new Peer('ops-node-' + p);
         peer.on('open', () => {
             document.getElementById('setup').style.display = 'none';
             document.getElementById('chat-ui').style.display = 'flex';
-            addChat("SYS", "TUNNEL ACTIVE ON PORT " + p, "#555");
         });
-        peer.on('connection', (c) => { conn = c; handleConn(); });
-        const outgoing = peer.connect('ops-room-' + p);
-        if(outgoing) { conn = outgoing; handleConn(); }
-    }
-
-    function handleConn() {
-        conn.on('data', data => addChat("REMOTE", data, "var(--blue)"));
+        peer.on('connection', (c) => { 
+            conn = c; 
+            conn.on('data', d => addChat("REMOTE", d, "var(--blue)"));
+        });
+        const out = peer.connect('ops-node-' + p);
+        if(out) { 
+            conn = out; 
+            conn.on('data', d => addChat("REMOTE", d, "var(--blue)"));
+        }
     }
 
     document.getElementById('chat-in').addEventListener('keydown', (e) => {
         if(e.key === 'Enter' && conn) {
-            const m = e.target.value;
-            conn.send(m);
-            addChat("YOU", m, "#fff");
+            conn.send(e.target.value);
+            addChat("YOU", e.target.value, "#fff");
             e.target.value = '';
         }
     });
@@ -141,11 +144,21 @@
     function addChat(u, m, c) {
         const b = document.getElementById('chat-box');
         const d = document.createElement('div');
-        const msg = m.replace(/(badword1|badword2)/gi, '****'); // Hardcoded censorship
-        d.innerHTML = `<span style="color:${c}">[${u}]</span> ${msg}`;
+        const clean = m.replace(/(badword1|badword2)/gi, '***');
+        d.innerHTML = `<span style="color:${c}">[${u}]</span> ${clean}`;
         b.appendChild(d);
         b.scrollTop = b.scrollHeight;
     }
+
+    // Net-Logs
+    const feed = document.getElementById('log-feed');
+    setInterval(() => {
+        const d = document.createElement('div');
+        d.style.fontSize = '11px';
+        d.textContent = `[${new Date().toLocaleTimeString()}] TRACE: ${Math.random().toString(16).slice(2,10)}`;
+        feed.prepend(d);
+        if(feed.childElementCount > 20) feed.lastChild.remove();
+    }, 3000);
 </script>
 </body>
 </html>
