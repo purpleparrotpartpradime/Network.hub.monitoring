@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Frutiger Aero Communication System (FACS)</title>
     <style>
-        :root { --glass: rgba(255, 255, 255, 0.2); --border: rgba(255, 255, 255, 0.5); }
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #004a99; font-family: "Segoe UI", "Tahoma", sans-serif; }
+        :root { --glass: rgba(255, 255, 255, 0.2); --border: rgba(255, 255, 255, 0.6); }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #004a99; font-family: "Segoe UI", sans-serif; }
         
-        #renderCanvas { position: fixed; inset: 0; z-index: -1; }
-        
-        #main { display: flex; flex-direction: column; height: 100vh; padding-top: env(safe-area-inset-top); }
+        #renderCanvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+        .sky-bg { position: fixed; inset: 0; z-index: 0; background: linear-gradient(to bottom, #0072ff, #00c6ff); }
+
+        #main { position: relative; z-index: 10; display: flex; flex-direction: column; height: 100vh; padding-top: env(safe-area-inset-top); }
         
         #header { 
             width: 100%; height: 65px; flex-shrink: 0;
@@ -35,21 +35,20 @@
         button { 
             background: linear-gradient(#7abcff, #4096ee); color: white; border: 1px solid white;
             padding: 15px 35px; border-radius: 40px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.4); text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4); text-transform: uppercase;
         }
 
         #chat-ui { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-        #box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; -webkit-overflow-scrolling: touch; }
+        #box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
 
         .bubble-msg { 
             max-width: 75%; padding: 15px 20px; border-radius: 25px;
             background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(35px) saturate(180%);
-            border: 1px solid var(--border); color: white; position: relative;
+            border: 1px solid var(--border); color: white;
             box-shadow: inset 0 12px 12px rgba(255,255,255,0.25), 0 8px 20px rgba(0,0,0,0.15);
         }
         .bubble-msg.self { align-self: flex-end; background: rgba(0, 136, 255, 0.25); border-color: #55b6ff; }
-        .sender { font-size: 11px; font-weight: bold; color: #e0f7ff; margin-bottom: 5px; text-transform: uppercase; }
-
+        
         #footer { 
             padding: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(20px);
             border-top: 1px solid var(--border); padding-bottom: calc(20px + env(safe-area-inset-bottom));
@@ -58,6 +57,7 @@
 </head>
 <body>
 
+<div class="sky-bg"></div>
 <canvas id="renderCanvas"></canvas>
 
 <div id="main">
@@ -66,13 +66,13 @@
         <div class="glass-panel">
             <input type="text" id="id-in" placeholder="CHANNEL ID" autocomplete="off">
             <input type="text" id="name-in" placeholder="DISPLAY NAME" autocomplete="off">
-            <button onclick="requestSensors()">Allow Gyroscopic Data</button>
+            <button onclick="bootSequence()">Allow Gyroscopic Data & Connect</button>
         </div>
     </div>
     <div id="chat-ui">
         <div id="box"></div>
         <div id="footer">
-            <input type="text" id="msg-in" placeholder="Type a message..." autocomplete="off">
+            <input type="text" id="msg-in" placeholder="Transmission..." autocomplete="off">
         </div>
     </div>
 </div>
@@ -86,34 +86,13 @@
     let particles = [];
     let lastMsg = "FACS";
 
-    window.requestSensors = () => {
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-            DeviceOrientationEvent.requestPermission().then(res => {
-                if (res === 'granted') window.addEventListener('deviceorientation', handleTilt);
-            }).catch(console.error);
-        } else {
-            window.addEventListener('deviceorientation', handleTilt);
-        }
-        boot();
-    };
-
-    function handleTilt(e) {
-        tiltX = e.gamma / 25; 
-        tiltY = e.beta / 25;  
-    }
-
-    function initScene() {
+    function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        particles = [];
-        for(let i=0; i<10; i++) particles.push(new Bubble());
     }
 
     class Bubble {
-        constructor() {
-            this.reset();
-            this.y = Math.random() * canvas.height;
-        }
+        constructor() { this.reset(); this.y = Math.random() * canvas.height; }
         reset() {
             this.r = 35 + Math.random() * 55;
             this.x = Math.random() * canvas.width;
@@ -122,83 +101,83 @@
         }
         draw() {
             this.y -= this.speed;
-            this.x += tiltX * 6; 
+            this.x += (tiltX * 8); 
             if (this.y < -this.r) this.reset();
 
             ctx.save();
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
             ctx.clip();
-            
-            // Real-time Text Reflection
             ctx.fillStyle = "rgba(255,255,255,0.15)";
             ctx.font = "italic bold 14px Arial";
             ctx.textAlign = "center";
             ctx.fillText(lastMsg.substring(0, 15), this.x, this.y + 5);
-            
-            // Liquid Surface Highlight
-            let grad = ctx.createRadialGradient(this.x - this.r/2.5, this.y - this.r/2.5, 2, this.x, this.y, this.r);
-            grad.addColorStop(0, "rgba(255,255,255,0.7)");
-            grad.addColorStop(0.4, "rgba(255,255,255,0.1)");
-            grad.addColorStop(1, "rgba(0,160,255,0.25)");
+            let grad = ctx.createRadialGradient(this.x - this.r/3, this.y - this.r/3, 5, this.x, this.y, this.r);
+            grad.addColorStop(0, "rgba(255,255,255,0.6)");
+            grad.addColorStop(1, "rgba(0,160,255,0.1)");
             ctx.fillStyle = grad;
             ctx.fill();
             ctx.restore();
         }
     }
 
-    function drawWater() {
-        const h = canvas.height;
-        const w = canvas.width;
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => p.draw());
+        
+        // Water Logic
         ctx.fillStyle = "rgba(0, 140, 255, 0.4)";
         ctx.beginPath();
-        ctx.moveTo(0, h);
-        
-        let waterLine = h - (h * 0.2); // Bottom 5th
-        for(let i=0; i<=w; i+=15) {
-            let y = waterLine + Math.sin(i * 0.008 + Date.now() * 0.0025) * 12;
-            y += (tiltY * 30); // Gyro Slosh
+        ctx.moveTo(0, canvas.height);
+        let waterLine = canvas.height - (canvas.height * 0.2); 
+        for(let i=0; i<=canvas.width; i+=15) {
+            let y = waterLine + Math.sin(i * 0.01 + Date.now() * 0.002) * 10;
+            y += (tiltY * 40);
             ctx.lineTo(i, y);
         }
-        ctx.lineTo(w, h);
+        ctx.lineTo(canvas.width, canvas.height);
         ctx.fill();
-    }
-
-    function animate() {
-        ctx.clearRect(0,0,canvas.width, canvas.height);
-        let sky = ctx.createLinearGradient(0,0,0,canvas.height);
-        sky.addColorStop(0, "#0072ff");
-        sky.addColorStop(1, "#00c6ff");
-        ctx.fillStyle = sky;
-        ctx.fillRect(0,0,canvas.width, canvas.height);
-        
-        particles.forEach(p => p.draw());
-        drawWater();
         requestAnimationFrame(animate);
     }
 
-    window.boot = () => {
+    window.bootSequence = async () => {
         const id = document.getElementById('id-in').value.trim();
-        myName = document.getElementById('name-in').value.trim() || 'Guest';
+        myName = document.getElementById('name-in').value.trim() || 'User';
         if (!id) return;
+
+        // Permissions
+        if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission === 'granted') window.addEventListener('deviceorientation', e => {
+                    tiltX = (e.gamma || 0) / 25;
+                    tiltY = (e.beta || 0) / 25;
+                });
+            } catch (e) { console.error(e); }
+        } else {
+            window.addEventListener('deviceorientation', e => {
+                tiltX = (e.gamma || 0) / 25;
+                tiltY = (e.beta || 0) / 25;
+            });
+        }
+
         document.getElementById('setup').style.display = 'none';
         document.getElementById('chat-ui').style.display = 'flex';
 
-        room = joinRoom({appId: 'facs-protocol-v1'}, id);
+        room = joinRoom({appId: 'facs-final-v1'}, id);
         const [sendMsg, recvMsg] = room.makeAction('chat');
         send = sendMsg;
 
         recvMsg((data) => {
             addMsg(data.name, data.text, false);
-            lastMsg = data.text; 
+            lastMsg = data.text;
         });
 
         document.getElementById('msg-in').onkeydown = e => {
             if (e.key === 'Enter' && e.target.value.trim()) {
-                const text = e.target.value;
-                send({ name: myName, text: text });
-                addMsg(myName, text, true);
-                lastMsg = text; 
+                send({ name: myName, text: e.target.value });
+                addMsg(myName, e.target.value, true);
+                lastMsg = e.target.value;
                 e.target.value = '';
             }
         };
@@ -207,13 +186,14 @@
     function addMsg(name, text, isSelf) {
         const div = document.createElement('div');
         div.className = 'bubble-msg' + (isSelf ? ' self' : '');
-        div.innerHTML = `<div class="sender">${name}</div><div>${text}</div>`;
+        div.innerHTML = `<div style="font-size:10px; font-weight:bold; margin-bottom:5px;">${name}</div><div>${text}</div>`;
         document.getElementById('box').appendChild(div);
         document.getElementById('box').scrollTop = document.getElementById('box').scrollHeight;
     }
 
-    window.addEventListener('resize', initScene);
-    initScene();
+    window.addEventListener('resize', resize);
+    resize();
+    for(let i=0; i<12; i++) particles.push(new Bubble());
     animate();
 </script>
 </body>
