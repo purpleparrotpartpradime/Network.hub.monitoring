@@ -7,7 +7,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Frutiger Aero Communication System (FACS)</title>
     <style>
-        /* --- LIQUID GLASS & AERO CORE CSS --- */
         :root {
             --glass-white: rgba(255, 255, 255, 0.22);
             --glass-blue: rgba(0, 136, 255, 0.28);
@@ -16,178 +15,69 @@
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background: #004a99;
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            overflow: hidden; background: #004a99;
             font-family: "Segoe UI", "Tahoma", sans-serif;
-            color: white;
-            -webkit-user-select: none;
+            color: white; -webkit-user-select: none;
         }
 
-        #renderCanvas {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            pointer-events: none;
-        }
+        #renderCanvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+        .sky-bg { position: fixed; inset: 0; z-index: 0; background: linear-gradient(180deg, #0072ff 0%, #00c6ff 60%, #004a99 100%); }
 
-        .sky-bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            background: linear-gradient(180deg, #0072ff 0%, #00c6ff 60%, #ffffff 100%);
-        }
+        #main { position: relative; z-index: 10; display: flex; flex-direction: column; height: 100vh; padding-top: env(safe-area-inset-top); }
 
-        #main {
-            position: relative;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding-top: env(safe-area-inset-top);
-        }
-
-        /* --- HEADER --- */
         #header {
-            width: 100%;
-            height: 65px;
-            flex-shrink: 0;
+            width: 100%; height: 65px; flex-shrink: 0;
             background: url('https://githubusercontent.com') no-repeat center;
-            background-size: contain;
-            border-bottom: 1.5px solid var(--border-bright);
-            backdrop-filter: blur(15px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background-size: contain; border-bottom: 1.5px solid var(--border-bright);
+            backdrop-filter: blur(15px); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        /* --- SETUP PANEL --- */
-        #setup {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-        }
+        #setup { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; }
 
         .liquid-panel {
-            background: var(--glass-white);
-            backdrop-filter: blur(35px) saturate(180%);
-            border: 1px solid var(--border-bright);
-            border-radius: 30px;
-            padding: 40px;
-            width: 85%;
-            max-width: 360px;
-            text-align: center;
-            box-shadow: 
-                inset 0 0 30px rgba(255,255,255,0.4),
-                inset 0 10px 10px rgba(255,255,255,0.3),
-                var(--aero-shadow);
+            background: var(--glass-white); backdrop-filter: blur(35px) saturate(180%);
+            border: 1px solid var(--border-bright); border-radius: 30px;
+            padding: 40px; width: 85%; max-width: 360px; text-align: center;
+            box-shadow: inset 0 0 30px rgba(255,255,255,0.4), var(--aero-shadow);
         }
 
         input {
-            width: 90%;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid var(--border-bright);
-            padding: 16px;
-            border-radius: 15px;
-            color: white;
-            outline: none;
-            margin-bottom: 15px;
-            font-size: 16px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
-            font-family: inherit;
-        }
-
-        input::placeholder {
-            color: rgba(255,255,255,0.7);
+            width: 90%; background: rgba(255,255,255,0.15); border: 1px solid var(--border-bright);
+            padding: 16px; border-radius: 15px; color: white; outline: none;
+            margin-bottom: 15px; font-size: 16px;
         }
 
         .aero-btn {
             background: linear-gradient(180deg, #7abcff 0%, #60abf8 44%, #4096ee 50%, #6ab1f9 100%);
-            color: white;
-            border: 1.5px solid #fff;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-weight: 900;
-            cursor: pointer;
+            color: white; border: 1.5px solid #fff; padding: 15px 40px;
+            border-radius: 50px; font-weight: 900; cursor: pointer;
             box-shadow: 0 8px 15px rgba(0,0,0,0.3), inset 0 2px 2px rgba(255,255,255,0.8);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin: 10px 0;
-            display: inline-block;
-            transition: transform 0.1s;
+            text-transform: uppercase; letter-spacing: 1.5px; margin: 10px 0;
+            display: inline-block; transition: transform 0.1s ease-out;
         }
 
-        .aero-btn:active {
-            transform: scale(0.96);
-        }
+        /* Shrink effect when clicked */
+        .aero-btn:active { transform: scale(0.92); }
 
-        /* --- CHAT INTERFACE --- */
-        #chat-ui {
-            display: none;
-            flex: 1;
-            flex-direction: column;
-            overflow: hidden;
-        }
+        #chat-ui { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        #box { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 25px; }
 
-        #box {
-            flex: 1;
-            overflow-y: auto;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* iOS Liquid Glass Bubbles */
         .bubble-msg {
-            max-width: 78%;
-            padding: 18px 22px;
-            border-radius: 28px;
-            background: rgba(255, 255, 255, 0.18);
-            backdrop-filter: blur(40px) saturate(200%);
-            border: 1.5px solid var(--border-bright);
-            color: white;
-            position: relative;
-            font-size: 16px;
-            line-height: 1.4;
-            box-shadow: 
-                inset 0 14px 14px rgba(255,255,255,0.3),
-                0 10px 25px rgba(0,0,0,0.15);
+            max-width: 78%; padding: 18px 22px; border-radius: 28px;
+            background: rgba(255, 255, 255, 0.18); backdrop-filter: blur(40px) saturate(200%);
+            border: 1.5px solid var(--border-bright); color: white; position: relative;
+            box-shadow: inset 0 14px 14px rgba(255,255,255,0.3), 0 10px 25px rgba(0,0,0,0.15);
         }
 
-        .bubble-msg.self {
-            align-self: flex-end;
-            background: var(--glass-blue);
-            border-color: #7accff;
-            box-shadow: 
-                inset 0 14px 14px rgba(255,255,255,0.25),
-                0 10px 25px rgba(0,0,0,0.2);
-        }
+        .bubble-msg.self { align-self: flex-end; background: var(--glass-blue); border-color: #7accff; }
 
-        .sender-tag {
-            font-size: 11px;
-            font-weight: 900;
-            color: #d0f0ff;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
+        .sender-tag { font-size: 11px; font-weight: 900; color: #d0f0ff; margin-bottom: 6px; text-transform: uppercase; }
 
-        /* --- FOOTER --- */
         #footer {
-            padding: 20px;
-            background: rgba(255,255,255,0.12);
-            backdrop-filter: blur(25px);
-            border-top: 1px solid var(--border-bright);
-            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            padding: 20px; background: rgba(255,255,255,0.12); backdrop-filter: blur(25px);
+            border-top: 1px solid var(--border-bright); padding-bottom: calc(20px + env(safe-area-inset-bottom));
         }
-
     </style>
 </head>
 <body>
@@ -197,8 +87,6 @@
 
 <div id="main">
     <div id="header"></div>
-    
-    <!-- LOGIN VIEW -->
     <div id="setup">
         <div class="liquid-panel">
             <input type="text" id="id-in" placeholder="CHANNEL ID" autocomplete="off">
@@ -207,13 +95,9 @@
             <button class="aero-btn" onclick="boot()">Connect</button>
         </div>
     </div>
-
-    <!-- CHAT VIEW -->
     <div id="chat-ui">
         <div id="box"></div>
-        <div id="footer">
-            <input type="text" id="msg-in" placeholder="Message..." autocomplete="off">
-        </div>
+        <div id="footer"><input type="text" id="msg-in" placeholder="Message..." autocomplete="off"></div>
     </div>
 </div>
 
@@ -222,25 +106,14 @@
 
     const canvas = document.getElementById('renderCanvas');
     const ctx = canvas.getContext('2d');
-    
-    let room, send, myName;
-    let tiltX = 0, tiltY = 0;
+    let room, send, myName, tiltX = 0, tiltY = 0, gyroEnabled = false;
     let particles = [];
     let lastMsg = "FACS v1";
 
-    // --- PHYSICS ENGINE & DYNAMIC BG ---
-    
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 
     class GlassBubble {
-        constructor() {
-            this.init();
-            this.y = Math.random() * canvas.height;
-        }
-
+        constructor() { this.init(); this.y = Math.random() * canvas.height; }
         init() {
             this.r = 40 + Math.random() * 60;
             this.x = Math.random() * canvas.width;
@@ -248,131 +121,78 @@
             this.speed = 0.7 + Math.random() * 1.4;
             this.wobble = Math.random() * Math.PI * 2;
         }
-
         draw() {
             this.y -= this.speed;
             this.x += (tiltX * 10) + Math.sin(this.wobble) * 0.5;
             this.wobble += 0.02;
-
             if (this.y < -this.r) this.init();
-
             ctx.save();
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-            ctx.clip();
-
-            // 1. Dynamic Reflection Layer
-            ctx.globalAlpha = 0.18;
-            ctx.fillStyle = "#fff";
-            ctx.font = "italic bold 16px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(lastMsg.substring(0, 18), this.x, this.y + 6);
-            ctx.globalAlpha = 1.0;
-
-            // 2. Multi-layer Liquid Gradient
-            let grad = ctx.createRadialGradient(
-                this.x - this.r * 0.4, 
-                this.y - this.r * 0.4, 
-                this.r * 0.05, 
-                this.x, this.y, this.r
-            );
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.clip();
+            ctx.globalAlpha = 0.18; ctx.fillStyle = "#fff"; ctx.font = "italic bold 16px Arial"; ctx.textAlign = "center";
+            ctx.fillText(lastMsg.substring(0, 18), this.x, this.y + 6); ctx.globalAlpha = 1.0;
+            let grad = ctx.createRadialGradient(this.x - this.r * 0.4, this.y - this.r * 0.4, this.r * 0.05, this.x, this.y, this.r);
             grad.addColorStop(0, "rgba(255, 255, 255, 0.8)");
             grad.addColorStop(0.2, "rgba(255, 255, 255, 0.2)");
-            grad.addColorStop(0.7, "rgba(0, 180, 255, 0.1)");
-            grad.addColorStop(1, "rgba(0, 120, 255, 0.3)");
-            
-            ctx.fillStyle = grad;
-            ctx.fill();
-
-            // 3. Highlight Specular
-            ctx.beginPath();
-            ctx.ellipse(this.x - this.r*0.35, this.y - this.r*0.4, this.r*0.2, this.r*0.1, Math.PI/4, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(255,255,255,0.4)";
-            ctx.fill();
-
+            grad.addColorStop(1, "rgba(0, 80, 200, 0.3)");
+            ctx.fillStyle = grad; ctx.fill();
+            ctx.beginPath(); ctx.ellipse(this.x - this.r*0.35, this.y - this.r*0.4, this.r*0.2, this.r*0.1, Math.PI/4, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.fill();
             ctx.restore();
         }
     }
 
     function renderScene() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Render Bubbles
         particles.forEach(p => p.draw());
-
-        // Render Realistic Water (Bottom 5th)
-        const h = canvas.height;
-        const w = canvas.width;
-        ctx.fillStyle = "rgba(0, 145, 255, 0.45)";
-        ctx.beginPath();
-        ctx.moveTo(0, h);
-
-        let waterBase = h - (h * 0.20);
+        const h = canvas.height, w = canvas.width;
+        ctx.fillStyle = "rgba(0, 80, 200, 0.5)";
+        ctx.beginPath(); ctx.moveTo(0, h);
+        let waterBase = h - (h * 0.18);
         for (let i = 0; i <= w; i += 10) {
             let wave1 = Math.sin(i * 0.008 + Date.now() * 0.0022) * 12;
-            let wave2 = Math.sin(i * 0.015 - Date.now() * 0.001) * 5;
-            let y = waterBase + wave1 + wave2 + (tiltY * 45);
+            // If gyro not enabled, add fake directional flow from left
+            let flow = gyroEnabled ? (tiltY * 45) : (Math.sin((i - Date.now() * 0.1) * 0.01) * 8);
+            let y = waterBase + wave1 + flow;
             ctx.lineTo(i, y);
         }
-        ctx.lineTo(w, h);
-        ctx.fill();
-
+        ctx.lineTo(w, h); ctx.fill();
         requestAnimationFrame(renderScene);
     }
-
-    // --- SENSOR PERMISSIONS ---
 
     window.requestGyro = async () => {
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
                 const permission = await DeviceOrientationEvent.requestPermission();
                 if (permission === 'granted') {
-                    window.addEventListener('deviceorientation', handleOrientation);
+                    gyroEnabled = true;
+                    window.addEventListener('deviceorientation', e => {
+                        tiltX = (e.gamma || 0) / 25; tiltY = (e.beta || 0) / 25;
+                    });
                 }
-            } catch (err) {
-                console.error("Sensor Access Denied", err);
-            }
+            } catch (err) { console.error(err); }
         } else {
-            window.addEventListener('deviceorientation', handleOrientation);
+            gyroEnabled = true;
+            window.addEventListener('deviceorientation', e => {
+                tiltX = (e.gamma || 0) / 25; tiltY = (e.beta || 0) / 25;
+            });
         }
     };
-
-    function handleOrientation(e) {
-        tiltX = (e.gamma || 0) / 25;
-        tiltY = (e.beta || 0) / 25;
-    }
-
-    // --- APP LOGIC (NOSTR) ---
 
     window.boot = () => {
         const id = document.getElementById('id-in').value.trim();
         myName = document.getElementById('name-in').value.trim() || 'User';
-        
-        if (!id) {
-            alert("ID Required");
-            return;
-        }
-
+        if (!id) return;
         document.getElementById('setup').style.display = 'none';
         document.getElementById('chat-ui').style.display = 'flex';
-
-        // Initialize Nostr via Trystero
         room = joinRoom({appId: 'FACS-v1'}, id);
         const [sendMsg, recvMsg] = room.makeAction('chat');
         send = sendMsg;
-
-        recvMsg((data) => {
-            addMsg(data.name, data.text, false);
-            lastMsg = data.text;
-        });
-
+        recvMsg((data) => { addMsg(data.name, data.text, false); lastMsg = data.text; });
         document.getElementById('msg-in').onkeydown = e => {
             if (e.key === 'Enter' && e.target.value.trim()) {
-                const text = e.target.value;
-                send({ name: myName, text: text });
-                addMsg(myName, text, true);
-                lastMsg = text;
-                e.target.value = '';
+                send({ name: myName, text: e.target.value });
+                addMsg(myName, e.target.value, true);
+                lastMsg = e.target.value; e.target.value = '';
             }
         };
     };
@@ -381,26 +201,14 @@
         const container = document.getElementById('box');
         const wrapper = document.createElement('div');
         wrapper.className = 'bubble-msg' + (isSelf ? ' self' : '');
-        
-        wrapper.innerHTML = `
-            <div class="sender-tag">${name}</div>
-            <div class="text-content">${text}</div>
-        `;
-        
-        container.appendChild(wrapper);
-        container.scrollTop = container.scrollHeight;
+        wrapper.innerHTML = `<div class="sender-tag">${name}</div><div>${text}</div>`;
+        container.appendChild(wrapper); container.scrollTop = container.scrollHeight;
     }
 
-    // --- INIT ---
     window.addEventListener('resize', resize);
     resize();
-
-    for(let i=0; i<12; i++) {
-        particles.push(new GlassBubble());
-    }
-
+    for(let i=0; i<12; i++) particles.push(new GlassBubble());
     renderScene();
-
 </script>
 </body>
 </html>
