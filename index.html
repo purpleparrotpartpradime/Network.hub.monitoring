@@ -4,147 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Frutiger Aero Communication System (FACS)</title>
     <style>
-        :root {
-            --glass: rgba(255, 255, 255, 0.25);
-            --liquid: rgba(255, 255, 255, 0.4);
-            --aero-blue: #0088ff;
-        }
-
-        body, html {
-            margin: 0; padding: 0; height: 100%; width: 100%;
-            font-family: "Segoe UI", "Tahoma", sans-serif;
-            overflow: hidden; background: #004a99;
-        }
-
-        /* --- Dynamic Frutiger Background --- */
-        .aero-bg {
-            position: fixed; inset: 0; z-index: -1;
-            background: linear-gradient(to bottom, #0072ff, #00c6ff);
-            overflow: hidden;
-        }
-
-        /* Realistic Water Waves at Bottom */
-        .water {
-            position: absolute; bottom: 0; width: 100%; height: 150px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-        }
-
-        .wave {
-            position: absolute; bottom: 0; left: 0; width: 200%; height: 100%;
-            background: url('https://ibb.co') repeat-x;
-            background-size: 50% 100%;
-            opacity: 0.3;
-            animation: waveFlow 10s linear infinite;
-        }
-        .wave.top { opacity: 0.5; animation-duration: 7s; height: 80%; bottom: 10px; }
-
-        @keyframes waveFlow {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
-        }
-
-        /* Floating Bubbles */
-        .bubble {
-            position: absolute; border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6), transparent);
-            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1), 0 5px 15px rgba(0,136,255,0.3);
-            animation: float 15s infinite ease-in-out;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) translateX(0); }
-            50% { transform: translateY(-100px) translateX(20px); }
-        }
-
-        /* --- Layout --- */
+        :root { --glass: rgba(255, 255, 255, 0.2); --border: rgba(255, 255, 255, 0.5); }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #004a99; font-family: "Segoe UI", "Tahoma", sans-serif; }
+        
+        #renderCanvas { position: fixed; inset: 0; z-index: -1; }
+        
         #main { display: flex; flex-direction: column; height: 100vh; padding-top: env(safe-area-inset-top); }
-
-        /* Userbar Header */
-        #header {
-            width: 100%; height: 60px; flex-shrink: 0;
+        
+        #header { 
+            width: 100%; height: 65px; flex-shrink: 0;
             background: url('https://githubusercontent.com') no-repeat center;
-            background-size: contain; border-bottom: 1px solid rgba(255,255,255,0.5);
-            backdrop-filter: blur(10px);
+            background-size: contain; border-bottom: 1px solid var(--border); backdrop-filter: blur(12px);
         }
 
-        /* Setup Panel */
-        #setup {
-            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; padding: 20px;
+        #setup { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; }
+        .glass-panel { 
+            background: var(--glass); backdrop-filter: blur(30px); border: 1px solid var(--border);
+            border-radius: 25px; padding: 30px; width: 85%; max-width: 340px; text-align: center;
+            box-shadow: inset 0 0 25px rgba(255,255,255,0.4), 0 15px 45px rgba(0,0,0,0.3);
         }
 
-        .liquid-glass {
-            background: var(--glass);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 15px; backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 0 15px rgba(255,255,255,0.3);
-            padding: 15px; color: white; width: 80%; max-width: 300px; text-align: center;
+        input { 
+            width: 90%; background: rgba(255,255,255,0.15); border: 1px solid var(--border);
+            padding: 14px; border-radius: 12px; color: white; outline: none; margin-bottom: 12px; font-size: 16px;
         }
 
-        input {
-            width: 90%; background: rgba(0,0,0,0.1); border: 1px solid white;
-            padding: 10px; border-radius: 10px; color: white; outline: none; margin-bottom: 10px;
+        button { 
+            background: linear-gradient(#7abcff, #4096ee); color: white; border: 1px solid white;
+            padding: 15px 35px; border-radius: 40px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4); text-transform: uppercase; letter-spacing: 1px;
         }
 
-        button {
-            background: linear-gradient(#7abcff, #4096ee); color: white;
-            border: 1px solid white; padding: 12px 25px; border-radius: 20px;
-            font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        /* Chat UI */
         #chat-ui { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-        #box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        #box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; -webkit-overflow-scrolling: touch; }
 
-        /* Liquid Glass Bubbles */
-        .msg-wrap {
-            max-width: 75%; padding: 12px 18px; border-radius: 20px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(25px) saturate(150%);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: inset 0 0 10px rgba(255,255,255,0.2), 0 5px 15px rgba(0,0,0,0.1);
-            color: #fff; position: relative;
+        .bubble-msg { 
+            max-width: 75%; padding: 15px 20px; border-radius: 25px;
+            background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(35px) saturate(180%);
+            border: 1px solid var(--border); color: white; position: relative;
+            box-shadow: inset 0 12px 12px rgba(255,255,255,0.25), 0 8px 20px rgba(0,0,0,0.15);
         }
-        .msg-wrap.self { align-self: flex-end; background: rgba(0, 136, 255, 0.3); border-color: rgba(0, 136, 255, 0.5); }
-        .sender { font-size: 10px; font-weight: bold; opacity: 0.7; margin-bottom: 4px; text-transform: uppercase; }
+        .bubble-msg.self { align-self: flex-end; background: rgba(0, 136, 255, 0.25); border-color: #55b6ff; }
+        .sender { font-size: 11px; font-weight: bold; color: #e0f7ff; margin-bottom: 5px; text-transform: uppercase; }
 
-        #footer {
-            padding: 15px; background: rgba(255,255,255,0.1);
-            border-top: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(15px);
-            padding-bottom: calc(15px + env(safe-area-inset-bottom));
+        #footer { 
+            padding: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border); padding-bottom: calc(20px + env(safe-area-inset-bottom));
         }
     </style>
 </head>
 <body>
 
-<div class="aero-bg">
-    <div class="sun"></div>
-    <div class="bubble" style="width:80px; height:80px; left:10%; top:20%;"></div>
-    <div class="bubble" style="width:40px; height:40px; left:80%; top:40%; animation-delay: 2s;"></div>
-    <div class="bubble" style="width:100px; height:100px; left:60%; top:70%; animation-delay: 5s;"></div>
-    <div class="water">
-        <div class="wave"></div>
-        <div class="wave top"></div>
-    </div>
-</div>
+<canvas id="renderCanvas"></canvas>
 
 <div id="main">
     <div id="header"></div>
-    
     <div id="setup">
-        <div class="liquid-glass">
+        <div class="glass-panel">
             <input type="text" id="id-in" placeholder="CHANNEL ID" autocomplete="off">
-            <input type="text" id="name-in" placeholder="YOUR NAME" autocomplete="off">
-            <button onclick="boot()">Connect</button>
+            <input type="text" id="name-in" placeholder="DISPLAY NAME" autocomplete="off">
+            <button onclick="requestSensors()">Allow Gyroscopic Data</button>
         </div>
     </div>
-
     <div id="chat-ui">
         <div id="box"></div>
         <div id="footer">
-            <input type="text" id="msg-in" placeholder="Type a message..." autocomplete="off" style="width: 100%; margin:0;">
+            <input type="text" id="msg-in" placeholder="Type a message..." autocomplete="off">
         </div>
     </div>
 </div>
@@ -152,24 +80,117 @@
 <script type="module">
     import { joinRoom } from 'https://esm.run';
 
-    let room, send, myName;
-    const box = document.getElementById('box');
+    const canvas = document.getElementById('renderCanvas');
+    const ctx = canvas.getContext('2d');
+    let room, send, myName, tiltX = 0, tiltY = 0;
+    let particles = [];
+    let lastMsg = "FACS";
+
+    window.requestSensors = () => {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().then(res => {
+                if (res === 'granted') window.addEventListener('deviceorientation', handleTilt);
+            }).catch(console.error);
+        } else {
+            window.addEventListener('deviceorientation', handleTilt);
+        }
+        boot();
+    };
+
+    function handleTilt(e) {
+        tiltX = e.gamma / 25; 
+        tiltY = e.beta / 25;  
+    }
+
+    function initScene() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        particles = [];
+        for(let i=0; i<10; i++) particles.push(new Bubble());
+    }
+
+    class Bubble {
+        constructor() {
+            this.reset();
+            this.y = Math.random() * canvas.height;
+        }
+        reset() {
+            this.r = 35 + Math.random() * 55;
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + this.r;
+            this.speed = 0.8 + Math.random() * 1.5;
+        }
+        draw() {
+            this.y -= this.speed;
+            this.x += tiltX * 6; 
+            if (this.y < -this.r) this.reset();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+            ctx.clip();
+            
+            // Real-time Text Reflection
+            ctx.fillStyle = "rgba(255,255,255,0.15)";
+            ctx.font = "italic bold 14px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(lastMsg.substring(0, 15), this.x, this.y + 5);
+            
+            // Liquid Surface Highlight
+            let grad = ctx.createRadialGradient(this.x - this.r/2.5, this.y - this.r/2.5, 2, this.x, this.y, this.r);
+            grad.addColorStop(0, "rgba(255,255,255,0.7)");
+            grad.addColorStop(0.4, "rgba(255,255,255,0.1)");
+            grad.addColorStop(1, "rgba(0,160,255,0.25)");
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function drawWater() {
+        const h = canvas.height;
+        const w = canvas.width;
+        ctx.fillStyle = "rgba(0, 140, 255, 0.4)";
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        
+        let waterLine = h - (h * 0.2); // Bottom 5th
+        for(let i=0; i<=w; i+=15) {
+            let y = waterLine + Math.sin(i * 0.008 + Date.now() * 0.0025) * 12;
+            y += (tiltY * 30); // Gyro Slosh
+            ctx.lineTo(i, y);
+        }
+        ctx.lineTo(w, h);
+        ctx.fill();
+    }
+
+    function animate() {
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        let sky = ctx.createLinearGradient(0,0,0,canvas.height);
+        sky.addColorStop(0, "#0072ff");
+        sky.addColorStop(1, "#00c6ff");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        
+        particles.forEach(p => p.draw());
+        drawWater();
+        requestAnimationFrame(animate);
+    }
 
     window.boot = () => {
         const id = document.getElementById('id-in').value.trim();
-        myName = document.getElementById('name-in').value.trim() || 'Anonymous';
+        myName = document.getElementById('name-in').value.trim() || 'Guest';
         if (!id) return;
-
         document.getElementById('setup').style.display = 'none';
         document.getElementById('chat-ui').style.display = 'flex';
 
-        // Connect via Nostr relays
-        room = joinRoom({appId: 'phobos-liquid-aero'}, id);
-        const [sendMessage, receiveMessage] = room.makeAction('chat');
-        send = sendMessage;
+        room = joinRoom({appId: 'facs-protocol-v1'}, id);
+        const [sendMsg, recvMsg] = room.makeAction('chat');
+        send = sendMsg;
 
-        receiveMessage((data, peerId) => {
+        recvMsg((data) => {
             addMsg(data.name, data.text, false);
+            lastMsg = data.text; 
         });
 
         document.getElementById('msg-in').onkeydown = e => {
@@ -177,25 +198,23 @@
                 const text = e.target.value;
                 send({ name: myName, text: text });
                 addMsg(myName, text, true);
+                lastMsg = text; 
                 e.target.value = '';
             }
         };
     };
 
     function addMsg(name, text, isSelf) {
-        const wrap = document.createElement('div');
-        wrap.className = 'msg-wrap' + (isSelf ? ' self' : '');
-        wrap.innerHTML = `<div class="sender">${name}</div><div class="text">${text}</div>`;
-        box.appendChild(wrap);
-        box.scrollTop = box.scrollHeight;
+        const div = document.createElement('div');
+        div.className = 'bubble-msg' + (isSelf ? ' self' : '');
+        div.innerHTML = `<div class="sender">${name}</div><div>${text}</div>`;
+        document.getElementById('box').appendChild(div);
+        document.getElementById('box').scrollTop = document.getElementById('box').scrollHeight;
     }
 
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            document.getElementById('main').style.height = window.visualViewport.height + 'px';
-            box.scrollTop = box.scrollHeight;
-        });
-    }
+    window.addEventListener('resize', initScene);
+    initScene();
+    animate();
 </script>
 </body>
 </html>
